@@ -12,6 +12,8 @@ import org.s0me0ne25.cellprobe.core.resources.ResourceEntry
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.core.resources.ResourceListState
 import org.s0me0ne25.cellprobe.core.resources.effectiveState
+import org.s0me0ne25.cellprobe.core.vless.VlessEditResult
+import org.s0me0ne25.cellprobe.core.vless.VlessEntry
 
 class SettingsRepository(private val dataStore: DataStore<AppSettings>) {
 
@@ -23,6 +25,28 @@ class SettingsRepository(private val dataStore: DataStore<AppSettings>) {
     fun resourceList(id: ResourceListId): Flow<ResourceListState> = dataStore.data
         .map { it.resourceLists[id].effectiveState(id) }
         .distinctUntilChanged()
+
+    val vlessEntries: Flow<List<VlessEntry>> = dataStore.data
+        .map { it.vlessEntries }
+        .distinctUntilChanged()
+
+    /**
+     * Applies [edit] to the VLESS list atomically.
+     * Returns the edit error, or null on success.
+     */
+    suspend fun editVlessEntries(edit: (List<VlessEntry>) -> VlessEditResult): ListEditError? {
+        var error: ListEditError? = null
+        dataStore.updateData { settings ->
+            when (val result = edit(settings.vlessEntries)) {
+                is VlessEditResult.Success -> settings.copy(vlessEntries = result.entries)
+                is VlessEditResult.Failure -> {
+                    error = result.error
+                    settings
+                }
+            }
+        }
+        return error
+    }
 
     /**
      * Applies [edit] to the current effective entries of list [id] atomically.

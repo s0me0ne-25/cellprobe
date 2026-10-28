@@ -2,7 +2,7 @@
 
 package org.s0me0ne25.cellprobe.core.resources
 
-import java.net.IDN
+import org.s0me0ne25.cellprobe.core.net.Hosts
 import java.net.URI
 import java.net.URISyntaxException
 
@@ -33,12 +33,8 @@ sealed interface UrlParseResult {
 object UrlNormalizer {
 
     private const val HTTPS_PORT = 443
-    private const val MAX_HOST_LENGTH = 253
-    private const val MAX_LABEL_LENGTH = 63
 
     private val schemeRegex = Regex("^([A-Za-z][A-Za-z0-9+.-]*)://")
-    private val numericHostRegex = Regex("^[0-9.]+$")
-    private val ipv6Regex = Regex("^[0-9a-fA-F:.]+$")
 
     fun normalize(input: String): UrlParseResult {
         val trimmed = input.trim()
@@ -63,14 +59,13 @@ object UrlNormalizer {
         if (authority.isEmpty()) return UrlParseResult.Invalid(UrlError.INVALID_HOST)
         if ('@' in authority) return UrlParseResult.Invalid(UrlError.CREDENTIALS_NOT_ALLOWED)
 
-        val (rawHost, rawPort) = splitHostPort(authority)
+        val (rawHost, rawPort) = Hosts.splitHostPort(authority)
             ?: return UrlParseResult.Invalid(UrlError.INVALID_HOST)
-        val host = normalizeHost(rawHost) ?: return UrlParseResult.Invalid(UrlError.INVALID_HOST)
+        val host = Hosts.normalize(rawHost) ?: return UrlParseResult.Invalid(UrlError.INVALID_HOST)
         val port = if (rawPort == null) {
             null
         } else {
-            rawPort.toIntOrNull()?.takeIf { it in 1..65535 }
-                ?: return UrlParseResult.Invalid(UrlError.INVALID_PORT)
+            Hosts.parsePort(rawPort) ?: return UrlParseResult.Invalid(UrlError.INVALID_PORT)
         }
 
         if (tail == "/") tail = ""
@@ -96,7 +91,7 @@ object UrlNormalizer {
             return canonicalUrl
         }
         val asciiHost = uri.host ?: return canonicalUrl
-        val host = if (asciiHost.startsWith("[")) asciiHost else IDN.toUnicode(asciiHost)
+        val host = Hosts.toDisplay(asciiHost)
         val port = if (uri.port == -1) "" else ":${uri.port}"
         val path = uri.path.orEmpty().takeIf { it != "/" }.orEmpty()
         return host + port + path
@@ -112,58 +107,6 @@ object UrlNormalizer {
         } catch (_: URISyntaxException) {
             null
         } ?: return canonicalUrl
-        if (asciiHost.startsWith("[")) return canonicalUrl
-        return canonicalUrl.replaceFirst("://$asciiHost", "://${IDN.toUnicode(asciiHost)}")
-    }
-
-    /** Splits `host[:port]`; returns null for an unbracketed IPv6 literal. */
-    private fun splitHostPort(authority: String): Pair<String, String?>? {
-        if (authority.startsWith("[")) {
-            val close = authority.indexOf(']')
-            if (close < 0) return null
-            val host = authority.substring(0, close + 1)
-            val rest = authority.substring(close + 1)
-            return when {
-                rest.isEmpty() -> host to null
-                rest.startsWith(":") -> host to rest.substring(1)
-                else -> null
-            }
-        }
-        return when (authority.count { it == ':' }) {
-            0 -> authority to null
-            1 -> authority.substringBefore(':') to authority.substringAfter(':')
-            else -> null
-        }
-    }
-
-    private fun normalizeHost(rawHost: String): String? {
-        if (rawHost.startsWith("[")) {
-            val literal = rawHost.removePrefix("[").removeSuffix("]")
-            return if (':' in literal && ipv6Regex.matches(literal)) "[${literal.lowercase()}]" else null
-        }
-
-        val host = rawHost.removeSuffix(".")
-        if (host.isEmpty()) return null
-
-        if (numericHostRegex.matches(host)) {
-            return host.takeIf { isValidIpv4(it) }
-        }
-
-        val ascii = try {
-            IDN.toASCII(host, IDN.USE_STD3_ASCII_RULES).lowercase()
-        } catch (_: IllegalArgumentException) {
-            return null
-        }
-        if (ascii.length > MAX_HOST_LENGTH || '.' !in ascii) return null
-        val labels = ascii.split('.')
-        if (labels.any { it.isEmpty() || it.length > MAX_LABEL_LENGTH }) return null
-        return ascii
-    }
-
-    private fun isValidIpv4(host: String): Boolean {
-        val parts = host.split('.')
-        return parts.size == 4 && parts.all { part ->
-            part.isNotEmpty() && part.length <= 3 && (part.toIntOrNull() ?: -1) in 0..255
-        }
+        return canonicalUrl.replaceFirst("://$asciiHost", "://${Hosts.toDisplay(asciiHost)}")
     }
 }

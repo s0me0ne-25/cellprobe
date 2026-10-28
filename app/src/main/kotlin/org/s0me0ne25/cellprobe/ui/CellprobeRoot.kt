@@ -13,22 +13,26 @@ import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.ui.lists.ResourceListEditorScreen
 import org.s0me0ne25.cellprobe.ui.main.MainScreen
 import org.s0me0ne25.cellprobe.ui.settings.SettingsScreen
+import org.s0me0ne25.cellprobe.ui.vless.VlessEditorScreen
 
 /** Screens of the single activity. */
 sealed interface Screen {
     data object Main : Screen
     data object Settings : Screen
     data class ResourceListEditor(val listId: ResourceListId) : Screen
+    data object VlessEditor : Screen
 }
 
 private fun Screen.toRoute(): String = when (this) {
     Screen.Main -> "main"
     Screen.Settings -> "settings"
     is Screen.ResourceListEditor -> "list/${listId.name}"
+    Screen.VlessEditor -> "vless"
 }
 
 private fun screenFromRoute(route: String): Screen = when {
     route == "settings" -> Screen.Settings
+    route == "vless" -> Screen.VlessEditor
     route.startsWith("list/") ->
         ResourceListId.entries.firstOrNull { it.name == route.removePrefix("list/") }
             ?.let { Screen.ResourceListEditor(it) }
@@ -57,10 +61,12 @@ fun CellprobeRoot() {
         Screen.Settings -> SettingsScreen(
             onBack = navigateBack,
             onOpenList = { backStack.add(Screen.ResourceListEditor(it)) },
+            onOpenVless = { backStack.add(Screen.VlessEditor) },
         )
         is Screen.ResourceListEditor -> ResourceListEditorScreen(
             listId = screen.listId,
             onBack = navigateBack,
         )
+        Screen.VlessEditor -> VlessEditorScreen(onBack = navigateBack)
     }
 }

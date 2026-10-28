@@ -62,4 +62,28 @@
     <string name="url_error_invalid_port">Invalid port.</string>
     <string name="url_error_malformed">Invalid address.</string>
     <string name="marker_error_too_long">The marker is too long.</string>
+
+    <!-- VLESS list -->
+    <string name="vless_title">VLESS inbounds</string>
+    <string name="vless_description_short">Your VLESS/Reality servers.</string>
+    <string name="vless_description">Your VLESS/Reality servers. Paste a vless:// link from your proxy app: only the address, port, SNI and fingerprint are kept, the UUID and keys are discarded on paste and never stored.</string>
+    <string name="vless_empty">No inbounds yet. Tap + and paste a vless:// link.</string>
+    <string name="vless_sni_line">SNI %1$s</string>
+    <string name="vless_dialog_add_title">New inbound</string>
+    <string name="vless_dialog_edit_title">Edit inbound</string>
+    <string name="vless_dialog_server_label">Server</string>
+    <string name="vless_dialog_server_hint">Paste a vless:// link or type host:port sni [fingerprint].</string>
+    <string name="vless_dialog_label_label">Name (optional)</string>
+    <string name="vless_error_empty">Paste a link or enter the server.</string>
+    <string name="vless_error_unsupported_scheme">Only vless:// links are supported for now.</string>
+    <string name="vless_error_multiple_links">Paste one link at a time.</string>
+    <string name="vless_error_malformed">Cannot read this. Expected a vless:// link or host:port sni [fingerprint].</string>
+    <string name="vless_error_invalid_host">Invalid server address.</string>
+    <string name="vless_error_invalid_port">Invalid or missing port.</string>
+    <string name="vless_error_missing_sni">The server is an IP address: an SNI is required.</string>
+    <string name="vless_error_invalid_sni">The SNI must be a domain name.</string>
+    <string name="vless_error_invalid_fingerprint">Invalid fingerprint name.</string>
+    <string name="vless_error_unsupported_security">Only tls and reality security protocols are supported.</string>
+    <string name="vless_error_unsupported_transport">UDP transports (mKCP, QUIC) cannot be checked.</string>
+    <string name="vless_error_label_too_long">The name is too long.</string>
 </resources>

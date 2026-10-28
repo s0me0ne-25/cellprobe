@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.core.resources.StoredResourceList
+import org.s0me0ne25.cellprobe.core.vless.VlessEntry
 import java.io.InputStream
 import java.io.OutputStream
 
@@ -19,6 +20,7 @@ import java.io.OutputStream
 @Serializable
 data class AppSettings(
     val resourceLists: Map<ResourceListId, StoredResourceList> = emptyMap(),
+    val vlessEntries: List<VlessEntry> = emptyList(),
 )
 
 object AppSettingsSerializer : Serializer<AppSettings> {

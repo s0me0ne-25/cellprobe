@@ -10,6 +10,7 @@ import org.junit.jupiter.api.assertThrows
 import org.s0me0ne25.cellprobe.core.resources.ResourceEntry
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.core.resources.StoredResourceList
+import org.s0me0ne25.cellprobe.core.vless.VlessEntry
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 
@@ -35,6 +36,7 @@ class AppSettingsSerializerTest {
                     entries = listOf(ResourceEntry("https://lk.example", marker = "Баланс")),
                 ),
             ),
+            vlessEntries = listOf(VlessEntry("[2001:db8::1]", 8443, "a.example.com", "chrome", "Дом")),
         )
         assertEquals(settings, read(write(settings)))
     }
@@ -53,6 +55,12 @@ class AppSettingsSerializerTest {
     fun `unknown fields from newer versions are ignored`() {
         val settings = read("""{"resourceLists":{},"someFutureField":42}""")
         assertEquals(AppSettings(), settings)
+    }
+
+    @Test
+    fun `settings saved before the VLESS list existed still load`() {
+        val settings = read("""{"resourceLists":{"provider":{"customized":true,"entries":[]}}}""")
+        assertEquals(emptyList<VlessEntry>(), settings.vlessEntries)
     }
 
     @Test

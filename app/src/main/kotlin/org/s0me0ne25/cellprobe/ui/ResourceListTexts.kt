@@ -11,6 +11,7 @@ import org.s0me0ne25.cellprobe.core.resources.ListEditError
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.core.resources.ResourceListState
 import org.s0me0ne25.cellprobe.core.resources.UrlError
+import org.s0me0ne25.cellprobe.core.vless.VlessError
 
 /** UI texts for core enums. */
 
@@ -46,6 +47,22 @@ fun ListEditError.messageRes(): Int = when (this) {
     ListEditError.WOULD_BE_EMPTY -> R.string.list_error_would_be_empty
     ListEditError.NOT_FOUND -> R.string.list_error_not_found
     ListEditError.NO_PRESET -> R.string.list_error_no_preset
+}
+
+@StringRes
+fun VlessError.messageRes(): Int = when (this) {
+    VlessError.EMPTY -> R.string.vless_error_empty
+    VlessError.UNSUPPORTED_SCHEME -> R.string.vless_error_unsupported_scheme
+    VlessError.MULTIPLE_LINKS -> R.string.vless_error_multiple_links
+    VlessError.MALFORMED -> R.string.vless_error_malformed
+    VlessError.INVALID_HOST -> R.string.vless_error_invalid_host
+    VlessError.INVALID_PORT -> R.string.vless_error_invalid_port
+    VlessError.MISSING_SNI -> R.string.vless_error_missing_sni
+    VlessError.INVALID_SNI -> R.string.vless_error_invalid_sni
+    VlessError.INVALID_FINGERPRINT -> R.string.vless_error_invalid_fingerprint
+    VlessError.UNSUPPORTED_SECURITY -> R.string.vless_error_unsupported_security
+    VlessError.UNSUPPORTED_TRANSPORT -> R.string.vless_error_unsupported_transport
+    VlessError.LABEL_TOO_LONG -> R.string.vless_error_label_too_long
 }
 
 /** "5 entries · preset", "3 entries · customized", "empty". */
