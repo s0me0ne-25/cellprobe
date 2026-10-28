@@ -1,4 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">Cellprobe</string>
+
+    <!-- Common actions -->
+    <string name="action_back">Back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_reset">Reset</string>
+    <string name="action_save">Save</string>
+
+    <!-- Main screen -->
+    <string name="main_status_title">Network status</string>
+    <string name="main_status_placeholder">Checks are not implemented yet.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_lists">Resources to check</string>
+
+    <!-- Resource lists -->
+    <string name="list_domestic_title">Always reachable</string>
+    <string name="list_domestic_description">Never blocked. Used to check that there is a connection at all.</string>
+    <string name="list_foreign_title">Blocked in whitelist mode</string>
+    <string name="list_foreign_description">Reachable unless the network is in whitelist mode.</string>
+    <string name="list_banned_title">Known blocked</string>
+    <string name="list_banned_description">If any of these is reachable, traffic goes through a proxy or Cellprobe is not excluded from it.</string>
+    <string name="list_provider_title">Provider account pages</string>
+    <string name="list_provider_description">Your mobile operator and, if needed, your home ISP. Checked only when nothing else is reachable.</string>
+    <string name="list_summary_preset">preset</string>
+    <string name="list_summary_customized">customized</string>
+    <string name="list_summary_empty">empty</string>
+    <plurals name="list_entries_count">
+        <item quantity="one">%d entry</item>
+        <item quantity="other">%d entries</item>
+    </plurals>
+
+    <!-- List editor -->
+    <string name="editor_add">Add entry</string>
+    <string name="editor_reset_to_preset">Reset to preset</string>
+    <string name="editor_reset_confirm_title">Reset the list?</string>
+    <string name="editor_reset_confirm_text">All your changes to this list will be lost.</string>
+    <string name="editor_delete_confirm_title">Delete %1$s?</string>
+    <string name="editor_empty_list">The list is empty.</string>
+    <string name="editor_edit_entry">Edit %1$s</string>
+    <string name="editor_delete_entry">Delete %1$s</string>
+    <string name="editor_marker_line">Marker: %1$s</string>
+    <string name="list_error_duplicate">This address is already in the list.</string>
+    <string name="list_error_would_be_empty">This list cannot be empty. Add another entry first.</string>
+    <string name="list_error_not_found">The entry no longer exists.</string>
+    <string name="list_error_no_preset">This list has no preset.</string>
+
+    <!-- Entry dialog -->
+    <string name="entry_dialog_add_title">New entry</string>
+    <string name="entry_dialog_edit_title">Edit entry</string>
+    <string name="entry_dialog_url_label">Address (https)</string>
+    <string name="entry_dialog_marker_label">Marker (optional)</string>
+    <string name="entry_dialog_marker_hint">Text that must appear on the page. Leave empty to skip the content check.</string>
+    <string name="url_error_empty">Enter an address.</string>
+    <string name="url_error_not_https">Only https:// addresses are supported.</string>
+    <string name="url_error_credentials">Login and password in the address are not allowed.</string>
+    <string name="url_error_invalid_host">Invalid host name.</string>
+    <string name="url_error_invalid_port">Invalid port.</string>
+    <string name="url_error_malformed">Invalid address.</string>
+    <string name="marker_error_too_long">The marker is too long.</string>
 </resources>

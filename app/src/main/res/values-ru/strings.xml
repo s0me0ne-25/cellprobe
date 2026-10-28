@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Common actions -->
+    <string name="action_back">Назад</string>
+    <string name="action_cancel">Отмена</string>
+    <string name="action_delete">Удалить</string>
+    <string name="action_reset">Сбросить</string>
+    <string name="action_save">Сохранить</string>
+
+    <!-- Main screen -->
+    <string name="main_status_title">Состояние сети</string>
+    <string name="main_status_placeholder">Проверки пока не реализованы.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_section_lists">Проверяемые ресурсы</string>
+
+    <!-- Resource lists -->
+    <string name="list_domestic_title">Всегда доступные</string>
+    <string name="list_domestic_description">Не блокируются никогда. Проверяют само наличие связи.</string>
+    <string name="list_foreign_title">Блокируются в режиме белых списков</string>
+    <string name="list_foreign_description">Доступны, пока сеть не в режиме белого списка.</string>
+    <string name="list_banned_title">Заведомо заблокированные</string>
+    <string name="list_banned_description">Если доступен хоть один из них, трафик идёт через прокси или Cellprobe не добавлен в исключения.</string>
+    <string name="list_provider_title">Личные кабинеты провайдеров</string>
+    <string name="list_provider_description">Ваш мобильный оператор и, при необходимости, домашний провайдер. Проверяются, только когда не отвечает ничего другое.</string>
+    <string name="list_summary_preset">пресет</string>
+    <string name="list_summary_customized">изменён</string>
+    <string name="list_summary_empty">пусто</string>
+    <plurals name="list_entries_count">
+        <item quantity="one">%d запись</item>
+        <item quantity="few">%d записи</item>
+        <item quantity="many">%d записей</item>
+        <item quantity="other">%d записи</item>
+    </plurals>
+
+    <!-- List editor -->
+    <string name="editor_add">Добавить запись</string>
+    <string name="editor_reset_to_preset">Сброс на пресет</string>
+    <string name="editor_reset_confirm_title">Сбросить список?</string>
+    <string name="editor_reset_confirm_text">Все ваши изменения в этом списке будут потеряны.</string>
+    <string name="editor_delete_confirm_title">Удалить %1$s?</string>
+    <string name="editor_empty_list">Список пуст.</string>
+    <string name="editor_edit_entry">Изменить %1$s</string>
+    <string name="editor_delete_entry">Удалить %1$s</string>
+    <string name="editor_marker_line">Маркер: %1$s</string>
+    <string name="list_error_duplicate">Этот адрес уже есть в списке.</string>
+    <string name="list_error_would_be_empty">Этот список не может быть пустым. Сначала добавьте другую запись.</string>
+    <string name="list_error_not_found">Запись уже удалена.</string>
+    <string name="list_error_no_preset">У этого списка нет пресета.</string>
+
+    <!-- Entry dialog -->
+    <string name="entry_dialog_add_title">Новая запись</string>
+    <string name="entry_dialog_edit_title">Изменить запись</string>
+    <string name="entry_dialog_url_label">Адрес (https)</string>
+    <string name="entry_dialog_marker_label">Маркер (необязательно)</string>
+    <string name="entry_dialog_marker_hint">Текст, который должен быть на странице. Пусто — содержимое не проверяется.</string>
+    <string name="url_error_empty">Введите адрес.</string>
+    <string name="url_error_not_https">Поддерживаются только адреса https://.</string>
+    <string name="url_error_credentials">Логин и пароль в адресе не допускаются.</string>
+    <string name="url_error_invalid_host">Некорректное имя хоста.</string>
+    <string name="url_error_invalid_port">Некорректный порт.</string>
+    <string name="url_error_malformed">Некорректный адрес.</string>
+    <string name="marker_error_too_long">Слишком длинный маркер.</string>
+</resources>

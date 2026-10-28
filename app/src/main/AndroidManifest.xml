@@ -8,6 +8,7 @@
         covers cloud backup and device-to-device transfer on API 31+.
     -->
     <application
+        android:name=".CellprobeApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="false"

@@ -5,6 +5,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -59,6 +60,15 @@ android {
         compose = true
     }
 
+    lint {
+        // AGP follows the latest stable Android Studio, not the latest AGP.
+        disable += "AndroidGradlePluginVersion"
+    }
+
+    testOptions {
+        unitTests.all { it.useJUnitPlatform() }
+    }
+
     // The dependency metadata block is encrypted with a Google key and
     // breaks reproducible builds; F-Droid requires it to be absent.
     dependenciesInfo {
@@ -71,6 +81,10 @@ dependencies {
     implementation(project(":core"))
 
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.datastore)
+    implementation(libs.kotlinx.serialization.json)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
@@ -78,4 +92,8 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     coreLibraryDesugaring(libs.desugar.jdk.libs)
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }

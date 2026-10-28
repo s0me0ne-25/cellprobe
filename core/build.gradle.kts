@@ -6,6 +6,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 // dependencies, unit-tested on the JVM.
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 java {
@@ -20,9 +21,12 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.kotlinx.serialization.core)
+
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
+    testImplementation(libs.kotlinx.serialization.json)
 }
 
 tasks.test {
