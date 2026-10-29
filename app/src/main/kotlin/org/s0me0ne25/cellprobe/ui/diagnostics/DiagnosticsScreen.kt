@@ -42,7 +42,6 @@ import org.s0me0ne25.cellprobe.core.probe.ProbeOutcome
 import org.s0me0ne25.cellprobe.ui.components.BackButton
 import org.s0me0ne25.cellprobe.engine.EntryRow
 import org.s0me0ne25.cellprobe.engine.ListSection
-import org.s0me0ne25.cellprobe.ui.textRes
 import org.s0me0ne25.cellprobe.ui.titleRes
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -99,7 +98,7 @@ fun DiagnosticsScreen(
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
-                            text = stringResource(result.status.textRes()),
+                            text = stringResource(result.status.titleRes()),
                             style = MaterialTheme.typography.titleMedium,
                         )
                         Text(

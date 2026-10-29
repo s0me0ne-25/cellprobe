@@ -14,17 +14,26 @@
     <string name="main_status_details">%1$s · проверено в %2$s</string>
 
     <!-- Network statuses (spec §4) -->
-    <string name="status_normal">Штатный режим сети, рекомендуется VLESS</string>
-    <string name="status_normal_no_vless">Штатный режим, VLESS не настроен</string>
-    <string name="status_vless_blocked">Все VLESS-входы заблокированы, смените сервер или используйте I2P</string>
-    <string name="status_whitelist">Сеть в режиме белого списка, используйте olcRTC</string>
+    <string name="status_normal">Стандартные блокировки</string>
+    <string name="status_normal_description">Рекомендуется VLESS. Ваши серверы частично или полностью доступны.</string>
+    <string name="status_normal_no_vless">Стандартные блокировки</string>
+    <string name="status_normal_no_vless_description">Укажите ваши серверы VLESS для проверки их доступности.</string>
+    <string name="status_vless_blocked">VLESS заблокирован</string>
+    <string name="status_vless_blocked_description">Смените VPN-сервер или используйте I2P. Интернет работает, однако указанные вами VLESS-входы недоступны.</string>
+    <string name="status_whitelist">Белый список</string>
+    <string name="status_whitelist_description">Рекомендуется olcRTC. VLESS и I2P, вероятнее всего, работать не будут.</string>
     <string name="status_pay">Оплатите связь</string>
-    <string name="status_auth_required">Требуется авторизация в сети</string>
-    <string name="status_no_internet">Фактическое подключение к интернету отсутствует</string>
+    <string name="status_pay_description">Доступен только личный кабинет провайдера. Проверьте оплату задолженностей и остаток трафика.</string>
+    <string name="status_auth_required">Требуется авторизация</string>
+    <string name="status_auth_required_description">Система обнаружила запрос авторизации провайдером. Перейдите по уведомлению и выполните необходимые действия, либо смените сеть.</string>
+    <string name="status_no_internet">Полное отсутствие связности</string>
+    <string name="status_no_internet_description">Авария на стороне провайдера, грубое вмешательство регулятора, или вы подключены к тестовой точке доступа / базовой станции.</string>
     <string name="status_no_signal">Нет сигнала мобильной сети</string>
     <string name="status_voice_only">Только голосовая связь, мобильный интернет не подключается</string>
-    <string name="status_leak">Прокси на внешней сети, или Cellprobe не добавлен в исключения VPN-клиента</string>
-    <string name="status_user_offline">Связь отключена: авиарежим или мобильные данные выключены</string>
+    <string name="status_leak">Свободный интернет</string>
+    <string name="status_leak_description">Убедитесь, что Cellprobe добавлен в исключения VPN-клиента. Если да, поздравляем — ваша сеть свободна от регуляторных блокировок.</string>
+    <string name="status_user_offline">Отключено пользователем</string>
+    <string name="status_user_offline_description">Отключены все сетевые интерфейсы или включён авиарежим.</string>
 
     <!-- Network types -->
     <string name="network_type_wifi">Wi-Fi</string>

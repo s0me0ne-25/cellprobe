@@ -16,17 +16,26 @@
     <string name="main_status_details">%1$s · checked at %2$s</string>
 
     <!-- Network statuses (spec §4) -->
-    <string name="status_normal">Network operating normally, VLESS recommended</string>
-    <string name="status_normal_no_vless">Network operating normally, VLESS not set up</string>
-    <string name="status_vless_blocked">All VLESS inbounds are blocked: switch servers or use I2P</string>
-    <string name="status_whitelist">Network in whitelist mode: use olcRTC</string>
+    <string name="status_normal">Standard blocking</string>
+    <string name="status_normal_description">VLESS recommended. Your servers are partly or fully reachable.</string>
+    <string name="status_normal_no_vless">Standard blocking</string>
+    <string name="status_normal_no_vless_description">Add your VLESS servers to check whether they are reachable.</string>
+    <string name="status_vless_blocked">VLESS blocked</string>
+    <string name="status_vless_blocked_description">Switch VPN servers or use I2P. The internet works, but the VLESS inbounds you added are unreachable.</string>
+    <string name="status_whitelist">Whitelist mode</string>
+    <string name="status_whitelist_description">olcRTC recommended. VLESS and I2P will most likely not work.</string>
     <string name="status_pay">Pay for your connection</string>
-    <string name="status_auth_required">Network sign-in required</string>
-    <string name="status_no_internet">No actual internet connection</string>
+    <string name="status_pay_description">Only the provider account page is reachable. Check for unpaid bills and the remaining data allowance.</string>
+    <string name="status_auth_required">Sign-in required</string>
+    <string name="status_auth_required_description">The system detected a sign-in request from the provider. Tap the notification and complete the steps, or switch networks.</string>
+    <string name="status_no_internet">No connectivity at all</string>
+    <string name="status_no_internet_description">An outage on the provider’s side, heavy-handed regulator interference, or you are connected to a test access point or base station.</string>
     <string name="status_no_signal">No mobile network signal</string>
     <string name="status_voice_only">Voice only: mobile data does not connect</string>
-    <string name="status_leak">Proxy on the network, or Cellprobe is not excluded from the VPN client</string>
-    <string name="status_user_offline">Offline: airplane mode or mobile data is off</string>
+    <string name="status_leak">Free internet</string>
+    <string name="status_leak_description">Make sure Cellprobe is excluded from the VPN client. If it is, congratulations: your network is free of regulatory blocking.</string>
+    <string name="status_user_offline">Turned off by the user</string>
+    <string name="status_user_offline_description">All network interfaces are off or airplane mode is on.</string>
 
     <!-- Network types -->
     <string name="network_type_wifi">Wi-Fi</string>

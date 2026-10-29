@@ -21,18 +21,19 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.s0me0ne25.cellprobe.R
-import org.s0me0ne25.cellprobe.core.NetworkStatus
 import org.s0me0ne25.cellprobe.engine.CheckResult
 import org.s0me0ne25.cellprobe.engine.CheckState
+import org.s0me0ne25.cellprobe.ui.descriptionRes
 import org.s0me0ne25.cellprobe.ui.labelRes
-import org.s0me0ne25.cellprobe.ui.textRes
+import org.s0me0ne25.cellprobe.ui.theme.color
+import org.s0me0ne25.cellprobe.ui.titleRes
+import org.s0me0ne25.cellprobe.ui.tone
 import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -88,10 +89,16 @@ private fun StatusCard(state: CheckState) {
                 )
             } else {
                 Text(
-                    text = stringResource(result.status.textRes()),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = statusColor(result.status),
+                    text = stringResource(result.status.titleRes()),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = result.status.tone().color(),
                 )
+                result.status.descriptionRes()?.let { description ->
+                    Text(
+                        text = stringResource(description),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
                 Text(
                     text = resultDetails(result),
                     style = MaterialTheme.typography.bodyMedium,
@@ -114,14 +121,6 @@ private fun StatusCard(state: CheckState) {
             }
         }
     }
-}
-
-/** Soft modes in the primary color, filtering and failures in the error color. */
-@Composable
-private fun statusColor(status: NetworkStatus): Color = when (status.severity) {
-    0 -> MaterialTheme.colorScheme.primary
-    null -> MaterialTheme.colorScheme.onSurface
-    else -> MaterialTheme.colorScheme.error
 }
 
 /** "Wi-Fi · checked at 14:05". */

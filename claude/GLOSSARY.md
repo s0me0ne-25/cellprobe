@@ -1,6 +1,6 @@
 # Cellprobe — глоссарий
 
-Версия: 0.3 · 2026-10-29
+Версия: 0.4 · 2026-10-29
 
 Обязателен для текстов интерфейса (русских и английских), README, ТЗ, плана, описаний в каталогах приложений и коммит-сообщений.
 
@@ -56,18 +56,18 @@
 
 ### Статусы сети
 
-Тексты статусов на главном экране и в уведомлениях (ТЗ §4).
+Статус показывается названием (крупно) и пояснением (мельче) — на главном экране и в уведомлениях (ТЗ §4).
 
-| Статус | RU | EN |
-|---|---|---|
-| `NORMAL` | Штатный режим сети, рекомендуется VLESS | Network operating normally, VLESS recommended |
-| `NORMAL_NO_VLESS` | Штатный режим, VLESS не настроен | Network operating normally, VLESS not set up |
-| `VLESS_BLOCKED` | Все VLESS-входы заблокированы, смените сервер или используйте I2P | All VLESS inbounds are blocked: switch servers or use I2P |
-| `WHITELIST` | Сеть в режиме белого списка, используйте olcRTC | Network in whitelist mode: use olcRTC |
-| `PAY` | Оплатите связь | Pay for your connection |
-| `AUTH_REQUIRED` | Требуется авторизация в сети | Network sign-in required |
-| `NO_INTERNET` | Фактическое подключение к интернету отсутствует | No actual internet connection |
-| `NO_SIGNAL` | Нет сигнала мобильной сети | No mobile network signal |
-| `VOICE_ONLY` | Только голосовая связь, мобильный интернет не подключается | Voice only: mobile data does not connect |
-| `LEAK` | Прокси на внешней сети, или Cellprobe не добавлен в исключения VPN-клиента | Proxy on the network, or Cellprobe is not excluded from the VPN client |
-| `USER_OFFLINE` | Связь отключена: авиарежим или мобильные данные выключены | Offline: airplane mode or mobile data is off |
+| Статус | Цвет | RU: название / пояснение | EN: title / description |
+|---|---|---|---|
+| `NORMAL` | фиолетовый | **Стандартные блокировки** / Рекомендуется VLESS. Ваши серверы частично или полностью доступны. | **Standard blocking** / VLESS recommended. Your servers are partly or fully reachable. |
+| `NORMAL_NO_VLESS` | фиолетовый | **Стандартные блокировки** / Укажите ваши серверы VLESS для проверки их доступности. | **Standard blocking** / Add your VLESS servers to check whether they are reachable. |
+| `VLESS_BLOCKED` | жёлтый | **VLESS заблокирован** / Смените VPN-сервер или используйте I2P. Интернет работает, однако указанные вами VLESS-входы недоступны. | **VLESS blocked** / Switch VPN servers or use I2P. The internet works, but the VLESS inbounds you added are unreachable. |
+| `WHITELIST` | красный | **Белый список** / Рекомендуется olcRTC. VLESS и I2P, вероятнее всего, работать не будут. | **Whitelist mode** / olcRTC recommended. VLESS and I2P will most likely not work. |
+| `PAY` | красный | **Оплатите связь** / Доступен только личный кабинет провайдера. Проверьте оплату задолженностей и остаток трафика. | **Pay for your connection** / Only the provider account page is reachable. Check for unpaid bills and the remaining data allowance. |
+| `AUTH_REQUIRED` | красный | **Требуется авторизация** / Система обнаружила запрос авторизации провайдером. Перейдите по уведомлению и выполните необходимые действия, либо смените сеть. | **Sign-in required** / The system detected a sign-in request from the provider. Tap the notification and complete the steps, or switch networks. |
+| `NO_INTERNET` | красный | **Полное отсутствие связности** / Авария на стороне провайдера, грубое вмешательство регулятора, или вы подключены к тестовой точке доступа / базовой станции. | **No connectivity at all** / An outage on the provider’s side, heavy-handed regulator interference, or you are connected to a test access point or base station. |
+| `LEAK` | зелёный | **Свободный интернет** / Убедитесь, что Cellprobe добавлен в исключения VPN-клиента. Если да, поздравляем — ваша сеть свободна от регуляторных блокировок. | **Free internet** / Make sure Cellprobe is excluded from the VPN client. If it is, congratulations: your network is free of regulatory blocking. |
+| `USER_OFFLINE` | обычный | **Отключено пользователем** / Отключены все сетевые интерфейсы или включён авиарежим. | **Turned off by the user** / All network interfaces are off or airplane mode is on. |
+| `NO_SIGNAL` | красный | **Нет сигнала мобильной сети** / — (тексты уточняются на шаге 13) | **No mobile network signal** / — |
+| `VOICE_ONLY` | красный | **Только голосовая связь, мобильный интернет не подключается** / — (тексты уточняются на шаге 13) | **Voice only: mobile data does not connect** / — |
