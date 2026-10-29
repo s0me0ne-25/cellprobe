@@ -11,7 +11,7 @@
 
     <!-- Main screen -->
     <string name="main_status_title">Network status</string>
-    <string name="main_status_placeholder">Checks are not implemented yet.</string>
+    <string name="main_status_placeholder">The network status will appear here once the classifier is ready. For now you can check the resources manually.</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
@@ -86,4 +86,34 @@
     <string name="vless_error_unsupported_security">Only tls and reality security protocols are supported.</string>
     <string name="vless_error_unsupported_transport">UDP transports (mKCP, QUIC) cannot be checked.</string>
     <string name="vless_error_label_too_long">The name is too long.</string>
+
+    <!-- Manual check -->
+    <string name="action_check_now">Check now</string>
+    <string name="diagnostics_title">Resource check</string>
+    <string name="diagnostics_repeat">Repeat</string>
+    <string name="diagnostics_failed">The check could not start.</string>
+    <string name="diagnostics_verdict_checking">checking…</string>
+    <string name="diagnostics_verdict_retrying">rechecking…</string>
+    <string name="diagnostics_verdict_available">available</string>
+    <string name="diagnostics_verdict_unavailable">unavailable</string>
+    <string name="diagnostics_verdict_empty">empty</string>
+    <string name="diagnostics_status_pending">Checking</string>
+    <string name="diagnostics_status_ok">Reachable</string>
+    <string name="diagnostics_status_failed">Not reachable</string>
+    <string name="diagnostics_code_format">%1$s (%2$s)</string>
+    <string name="diagnostics_http_status">HTTP %1$d</string>
+    <string name="diagnostics_millis">%1$d ms</string>
+    <string name="diagnostics_page_title">“%1$s”</string>
+    <string name="probe_code_ok">Responded</string>
+    <string name="probe_code_ok_unverified">Responded, cut-off not checked</string>
+    <string name="probe_code_dns_fail">Name could not be resolved</string>
+    <string name="probe_code_tcp_timeout">No answer to the connection</string>
+    <string name="probe_code_tcp_reset">Connection refused or reset</string>
+    <string name="probe_code_tls_fail">TLS handshake failed</string>
+    <string name="probe_code_cert_invalid">Invalid certificate</string>
+    <string name="probe_code_cert_ru_ca">Russian state CA certificate</string>
+    <string name="probe_code_http_error">Connected, but no HTTP response</string>
+    <string name="probe_code_stalled">Data transfer stopped</string>
+    <string name="probe_code_content_mismatch">Marker not found on the page</string>
+    <string name="probe_code_skipped">Not checked: another entry already responded</string>
 </resources>

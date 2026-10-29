@@ -9,6 +9,10 @@ import androidx.datastore.dataStoreFile
 import org.s0me0ne25.cellprobe.data.AppSettings
 import org.s0me0ne25.cellprobe.data.AppSettingsSerializer
 import org.s0me0ne25.cellprobe.data.SettingsRepository
+import org.s0me0ne25.cellprobe.engine.ManualCheckRunner
+import org.s0me0ne25.cellprobe.probe.ProbeClientFactory
+import org.s0me0ne25.cellprobe.probe.TlsSetup
+import org.s0me0ne25.cellprobe.probe.UserAgentProvider
 
 /**
  * Manual dependency container, one per process.
@@ -27,6 +31,15 @@ class AppContainer(context: Context) {
         )
         SettingsRepository(dataStore)
     }
+
+    val userAgentProvider: UserAgentProvider by lazy { UserAgentProvider(appContext) }
+
+    /** Conscrypt is loaded on first use, from a background thread. */
+    private val tlsSetup: TlsSetup by lazy { TlsSetup.conscrypt() }
+
+    val probeClientFactory: ProbeClientFactory by lazy { ProbeClientFactory(tls = { tlsSetup }) }
+
+    val manualCheckRunner: ManualCheckRunner by lazy { ManualCheckRunner(probeClientFactory, userAgentProvider) }
 
     private companion object {
         const val SETTINGS_FILE = "settings.json"

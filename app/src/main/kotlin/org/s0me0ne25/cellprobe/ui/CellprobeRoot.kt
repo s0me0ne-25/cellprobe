@@ -10,6 +10,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
+import org.s0me0ne25.cellprobe.ui.diagnostics.DiagnosticsScreen
 import org.s0me0ne25.cellprobe.ui.lists.ResourceListEditorScreen
 import org.s0me0ne25.cellprobe.ui.main.MainScreen
 import org.s0me0ne25.cellprobe.ui.settings.SettingsScreen
@@ -21,6 +22,7 @@ sealed interface Screen {
     data object Settings : Screen
     data class ResourceListEditor(val listId: ResourceListId) : Screen
     data object VlessEditor : Screen
+    data object Diagnostics : Screen
 }
 
 private fun Screen.toRoute(): String = when (this) {
@@ -28,11 +30,13 @@ private fun Screen.toRoute(): String = when (this) {
     Screen.Settings -> "settings"
     is Screen.ResourceListEditor -> "list/${listId.name}"
     Screen.VlessEditor -> "vless"
+    Screen.Diagnostics -> "check"
 }
 
 private fun screenFromRoute(route: String): Screen = when {
     route == "settings" -> Screen.Settings
     route == "vless" -> Screen.VlessEditor
+    route == "check" -> Screen.Diagnostics
     route.startsWith("list/") ->
         ResourceListId.entries.firstOrNull { it.name == route.removePrefix("list/") }
             ?.let { Screen.ResourceListEditor(it) }
@@ -56,6 +60,7 @@ fun CellprobeRoot() {
 
     when (val screen = backStack.last()) {
         Screen.Main -> MainScreen(
+            onCheckNow = { backStack.add(Screen.Diagnostics) },
             onOpenSettings = { backStack.add(Screen.Settings) },
         )
         Screen.Settings -> SettingsScreen(
@@ -68,5 +73,6 @@ fun CellprobeRoot() {
             onBack = navigateBack,
         )
         Screen.VlessEditor -> VlessEditorScreen(onBack = navigateBack)
+        Screen.Diagnostics -> DiagnosticsScreen(onBack = navigateBack)
     }
 }

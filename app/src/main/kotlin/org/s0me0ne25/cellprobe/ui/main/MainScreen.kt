@@ -11,6 +11,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -22,7 +23,10 @@ import org.s0me0ne25.cellprobe.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(onOpenSettings: () -> Unit) {
+fun MainScreen(
+    onCheckNow: () -> Unit,
+    onOpenSettings: () -> Unit,
+) {
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
     ) { innerPadding ->
@@ -48,7 +52,10 @@ fun MainScreen(onOpenSettings: () -> Unit) {
                     )
                 }
             }
-            Button(onClick = onOpenSettings) {
+            Button(onClick = onCheckNow) {
+                Text(stringResource(R.string.action_check_now))
+            }
+            OutlinedButton(onClick = onOpenSettings) {
                 Text(stringResource(R.string.settings_title))
             }
         }

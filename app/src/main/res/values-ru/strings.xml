@@ -9,7 +9,7 @@
 
     <!-- Main screen -->
     <string name="main_status_title">Состояние сети</string>
-    <string name="main_status_placeholder">Проверки пока не реализованы.</string>
+    <string name="main_status_placeholder">Здесь появится состояние сети, когда будет готов классификатор. Пока ресурсы можно проверить вручную.</string>
 
     <!-- Settings -->
     <string name="settings_title">Настройки</string>
@@ -86,4 +86,34 @@
     <string name="vless_error_unsupported_security">Поддерживаются только протоколы безопасности tls и reality.</string>
     <string name="vless_error_unsupported_transport">UDP-транспорты (mKCP, QUIC) проверить нельзя.</string>
     <string name="vless_error_label_too_long">Слишком длинное название.</string>
+
+    <!-- Manual check -->
+    <string name="action_check_now">Проверить сейчас</string>
+    <string name="diagnostics_title">Проверка ресурсов</string>
+    <string name="diagnostics_repeat">Повторить</string>
+    <string name="diagnostics_failed">Не удалось запустить проверку.</string>
+    <string name="diagnostics_verdict_checking">проверяется…</string>
+    <string name="diagnostics_verdict_retrying">повторная проверка…</string>
+    <string name="diagnostics_verdict_available">доступен</string>
+    <string name="diagnostics_verdict_unavailable">недоступен</string>
+    <string name="diagnostics_verdict_empty">пусто</string>
+    <string name="diagnostics_status_pending">Проверяется</string>
+    <string name="diagnostics_status_ok">Доступен</string>
+    <string name="diagnostics_status_failed">Недоступен</string>
+    <string name="diagnostics_code_format">%1$s (%2$s)</string>
+    <string name="diagnostics_http_status">HTTP %1$d</string>
+    <string name="diagnostics_millis">%1$d мс</string>
+    <string name="diagnostics_page_title">«%1$s»</string>
+    <string name="probe_code_ok">Ответил</string>
+    <string name="probe_code_ok_unverified">Ответил, обрыв не проверен</string>
+    <string name="probe_code_dns_fail">Не удалось разрешить имя</string>
+    <string name="probe_code_tcp_timeout">Нет ответа на подключение</string>
+    <string name="probe_code_tcp_reset">Подключение отклонено или сброшено</string>
+    <string name="probe_code_tls_fail">Сбой TLS-рукопожатия</string>
+    <string name="probe_code_cert_invalid">Недействительный сертификат</string>
+    <string name="probe_code_cert_ru_ca">Сертификат Минцифры</string>
+    <string name="probe_code_http_error">Соединение есть, но HTTP-ответа нет</string>
+    <string name="probe_code_stalled">Передача данных оборвалась</string>
+    <string name="probe_code_content_mismatch">Маркер не найден на странице</string>
+    <string name="probe_code_skipped">Не проверялся: уже ответил другой ресурс</string>
 </resources>
