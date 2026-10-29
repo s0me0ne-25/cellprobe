@@ -64,4 +64,25 @@ class ProbeErrorClassifierTest {
         assertEquals(ProbeCode.STALLED, classify(ProbePhase.BODY, SocketException("Connection reset")))
         assertEquals(ProbeCode.HTTP_ERROR, classify(ProbePhase.BODY, ZipException("Not in GZIP format")))
     }
+
+    @Test
+    fun `description lists the causes once each`() {
+        val error = SSLHandshakeException("Handshake failed").apply {
+            initCause(CertificateException(CertPathValidatorException("Trust anchor for certification path not found.")))
+        }
+        assertEquals(
+            "SSLHandshakeException: Handshake failed ← " +
+                "CertificateException: java.security.cert.CertPathValidatorException: Trust anchor for certification path not found. ← " +
+                "CertPathValidatorException: Trust anchor for certification path not found.",
+            ProbeErrorClassifier.describe(error),
+        )
+        assertEquals("SocketTimeoutException", ProbeErrorClassifier.describe(SocketTimeoutException()))
+    }
+
+    @Test
+    fun `long descriptions are cut`() {
+        val description = ProbeErrorClassifier.describe(IOException("x".repeat(1_000)))
+        assertEquals(400, description.length)
+        assertEquals('…', description.last())
+    }
 }

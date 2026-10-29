@@ -6,20 +6,44 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import org.s0me0ne25.cellprobe.core.resources.ResourceEntry
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 
-/** Probes a single HTTPS resource. Implementations must be cancellable. */
-fun interface EntryProber {
-    suspend fun probe(entry: ResourceEntry): ProbeOutcome
+/** Lists probed in one check cycle, in display order. */
+enum class CheckListId(
+    /**
+     * Whether the first reachable entry cancels the others. Provider pages
+     * and VLESS inbounds are all probed: each one's state is shown.
+     */
+    val stopOnFirstReachable: Boolean,
+) {
+    DOMESTIC(stopOnFirstReachable = true),
+    FOREIGN(stopOnFirstReachable = true),
+    VLESS(stopOnFirstReachable = false),
+    BANNED(stopOnFirstReachable = true),
+    PROVIDER(stopOnFirstReachable = false),
+    ;
+
+    companion object {
+        fun of(id: ResourceListId): CheckListId = when (id) {
+            ResourceListId.DOMESTIC -> DOMESTIC
+            ResourceListId.FOREIGN -> FOREIGN
+            ResourceListId.BANNED -> BANNED
+            ResourceListId.PROVIDER -> PROVIDER
+        }
+    }
 }
 
-data class EntryResult(val entry: ResourceEntry, val outcome: ProbeOutcome)
+/** Probes a single list entry. Implementations must be cancellable. */
+fun interface EntryProber<in E> {
+    suspend fun probe(entry: E): ProbeOutcome
+}
 
-data class ListProbeResult(
-    val listId: ResourceListId,
+data class EntryResult<out E>(val entry: E, val outcome: ProbeOutcome)
+
+data class ListProbeResult<out E>(
+    val listId: CheckListId,
     /** Results of the last round, in list order. */
-    val results: List<EntryResult>,
+    val results: List<EntryResult<E>>,
     /** True if the first round found nothing and the list was probed again. */
     val retried: Boolean,
 ) {
@@ -30,26 +54,25 @@ data class ListProbeResult(
 
 /** Progress callbacks for the UI. Called from the probing coroutines. */
 interface ListProbeListener {
-    fun onRoundStarted(listId: ResourceListId, round: Int) {}
-    fun onEntryFinished(listId: ResourceListId, index: Int, result: EntryResult) {}
+    fun onRoundStarted(listId: CheckListId, round: Int) {}
+    fun onEntryFinished(listId: CheckListId, index: Int, outcome: ProbeOutcome) {}
 }
 
 /**
  * Probes one list according to the spec:
  * - all entries in parallel;
- * - for lists 1, 2, 4 the first reachable entry cancels the rest, which
- *   are reported as [ProbeCode.SKIPPED];
- * - provider pages are all probed, so that each responding one is known;
+ * - where [CheckListId.stopOnFirstReachable] is set, the first reachable
+ *   entry cancels the rest, which are reported as [ProbeCode.SKIPPED];
  * - if no entry is reachable, the whole list is probed once more.
  */
 object ListProbing {
 
-    suspend fun probeList(
-        listId: ResourceListId,
-        entries: List<ResourceEntry>,
-        prober: EntryProber,
+    suspend fun <E> probeList(
+        listId: CheckListId,
+        entries: List<E>,
+        prober: EntryProber<E>,
         listener: ListProbeListener = object : ListProbeListener {},
-    ): ListProbeResult {
+    ): ListProbeResult<E> {
         if (entries.isEmpty()) return ListProbeResult(listId, emptyList(), retried = false)
 
         listener.onRoundStarted(listId, round = 1)
@@ -61,14 +84,13 @@ object ListProbing {
         return ListProbeResult(listId, second, retried = true)
     }
 
-    private suspend fun runRound(
-        listId: ResourceListId,
-        entries: List<ResourceEntry>,
-        prober: EntryProber,
+    private suspend fun <E> runRound(
+        listId: CheckListId,
+        entries: List<E>,
+        prober: EntryProber<E>,
         listener: ListProbeListener,
-    ): List<EntryResult> {
-        val stopOnFirst = listId != ResourceListId.PROVIDER
-        val results = arrayOfNulls<EntryResult>(entries.size)
+    ): List<EntryResult<E>> {
+        val outcomes = arrayOfNulls<ProbeOutcome>(entries.size)
 
         coroutineScope {
             // Jobs are created lazily and started together, so that a fast
@@ -76,10 +98,10 @@ object ListProbing {
             val jobs = ArrayList<Job>(entries.size)
             entries.forEachIndexed { index, entry ->
                 jobs += launch(start = CoroutineStart.LAZY) {
-                    val result = EntryResult(entry, prober.probe(entry))
-                    results[index] = result
-                    listener.onEntryFinished(listId, index, result)
-                    if (stopOnFirst && result.outcome.code.reachable) {
+                    val outcome = prober.probe(entry)
+                    outcomes[index] = outcome
+                    listener.onEntryFinished(listId, index, outcome)
+                    if (listId.stopOnFirstReachable && outcome.code.reachable) {
                         jobs.forEachIndexed { other, job -> if (other != index) job.cancel() }
                     }
                 }
@@ -88,9 +110,10 @@ object ListProbing {
         }
 
         return entries.mapIndexed { index, entry ->
-            results[index] ?: EntryResult(entry, ProbeOutcome(ProbeCode.SKIPPED, durationMillis = 0)).also {
+            val outcome = outcomes[index] ?: ProbeOutcome(ProbeCode.SKIPPED, durationMillis = 0).also {
                 listener.onEntryFinished(listId, index, it)
             }
+            EntryResult(entry, outcome)
         }
     }
 }

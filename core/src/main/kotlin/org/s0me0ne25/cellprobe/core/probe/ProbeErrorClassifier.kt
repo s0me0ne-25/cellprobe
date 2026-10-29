@@ -35,8 +35,21 @@ object ProbeErrorClassifier {
         }
     }
 
+    /**
+     * Short technical description of [error] and its causes, such as
+     * `SSLHandshakeException: … ← CertPathValidatorException: Trust anchor
+     * for certification path not found`. For the check log, not for the UI.
+     */
+    fun describe(error: Throwable): String = generateSequence(error) { it.cause }
+        .take(MAX_CAUSE_DEPTH)
+        .map { cause -> listOfNotNull(cause.javaClass.simpleName, cause.message?.trim()?.ifEmpty { null }).joinToString(": ") }
+        .distinct()
+        .joinToString(" ← ")
+        .let { if (it.length > MAX_DETAIL_LENGTH) it.take(MAX_DETAIL_LENGTH - 1) + "…" else it }
+
     private fun Throwable.isCertificateProblem(): Boolean =
         this is CertificateException || this is CertPathValidatorException || this is SSLPeerUnverifiedException
 
     private const val MAX_CAUSE_DEPTH = 10
+    private const val MAX_DETAIL_LENGTH = 400
 }

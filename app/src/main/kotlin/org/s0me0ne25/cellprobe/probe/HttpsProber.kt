@@ -30,7 +30,7 @@ class HttpsProber(
     private val client: OkHttpClient,
     private val headers: List<Pair<String, String>>,
     private val readBody: Boolean,
-) : EntryProber {
+) : EntryProber<ResourceEntry> {
 
     override suspend fun probe(entry: ResourceEntry): ProbeOutcome = coroutineScope {
         val holder = PhaseHolder()
@@ -83,7 +83,11 @@ class HttpsProber(
         } catch (e: Exception) {
             // Includes IOException from cancellation; the caller's coroutine
             // is cancelled then and this outcome is discarded.
-            ProbeOutcome(ProbeErrorClassifier.classify(holder.phase, e), elapsedMillis())
+            ProbeOutcome(
+                code = ProbeErrorClassifier.classify(holder.phase, e),
+                durationMillis = elapsedMillis(),
+                errorDetail = ProbeErrorClassifier.describe(e),
+            )
         }
     }
 }

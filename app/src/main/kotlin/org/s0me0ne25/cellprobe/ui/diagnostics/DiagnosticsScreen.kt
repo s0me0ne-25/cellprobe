@@ -163,7 +163,7 @@ private fun EntryRowView(row: EntryRow) {
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = row.entry.displayName,
+                text = row.name,
                 style = MaterialTheme.typography.bodyLarge,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -196,7 +196,10 @@ private fun statusMark(outcome: ProbeOutcome?): Pair<String, String> = when {
     else -> "❌" to stringResource(R.string.diagnostics_status_failed)
 }
 
-/** "HTTP 200 · 143 ms · «Title»" for successes, "Description (CODE) · 5012 ms" otherwise. */
+/**
+ * "HTTP 200 · 143 ms · «Title»" for successes, "Description (CODE) · 5012 ms" otherwise;
+ * VLESS inbounds also show the received volume.
+ */
 @Composable
 private fun outcomeDetails(outcome: ProbeOutcome): String {
     if (outcome.code == ProbeCode.SKIPPED) return stringResource(R.string.probe_code_skipped)
@@ -208,6 +211,7 @@ private fun outcomeDetails(outcome: ProbeOutcome): String {
     }
     outcome.httpStatus?.let { parts += stringResource(R.string.diagnostics_http_status, it) }
     parts += stringResource(R.string.diagnostics_millis, outcome.durationMillis)
+    outcome.receivedBytes?.let { parts += stringResource(R.string.diagnostics_received_kb, it / BYTES_PER_KB) }
     outcome.pageTitle?.let { parts += stringResource(R.string.diagnostics_page_title, it) }
     return parts.joinToString(" · ")
 }
@@ -227,3 +231,5 @@ private fun ProbeCode.descriptionRes(): Int = when (this) {
     ProbeCode.CONTENT_MISMATCH -> R.string.probe_code_content_mismatch
     ProbeCode.SKIPPED -> R.string.probe_code_skipped
 }
+
+private const val BYTES_PER_KB = 1024L

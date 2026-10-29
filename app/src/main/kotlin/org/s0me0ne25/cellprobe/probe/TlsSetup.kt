@@ -9,10 +9,15 @@ import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
 
-/** TLS socket factory and the trust manager that validates its peers. */
+/** TLS socket factories and the trust manager that validates their peers. */
 class TlsSetup(
     val socketFactory: SSLSocketFactory,
     val trustManager: X509TrustManager,
+    /**
+     * Creates TLS sockets that do all I/O through the streams of the plain
+     * socket they wrap, so that bytes can be counted there (VLESS inbounds).
+     */
+    val streamSocketFactory: SSLSocketFactory = socketFactory,
 ) {
     companion object {
 
@@ -25,12 +30,19 @@ class TlsSetup(
          * Conscrypt is deliberately not installed as a global security
          * provider: that would also replace the platform's trust manager
          * factory and bypass network_security_config.
+         *
+         * By default Conscrypt layers TLS over a plain socket by reading its
+         * file descriptor directly. The stream factory uses Conscrypt's engine
+         * socket instead, which reads and writes the plain socket's streams.
          */
         fun conscrypt(): TlsSetup {
             val trustManager = platformTrustManager()
-            val context = SSLContext.getInstance("TLS", Conscrypt.newProvider())
-            context.init(null, arrayOf(trustManager), null)
-            return TlsSetup(context.socketFactory, trustManager)
+            val provider = Conscrypt.newProvider()
+            fun newFactory(): SSLSocketFactory = SSLContext.getInstance("TLS", provider)
+                .apply { init(null, arrayOf(trustManager), null) }
+                .socketFactory
+            val streamFactory = newFactory().also { Conscrypt.setUseEngineSocket(it, true) }
+            return TlsSetup(newFactory(), trustManager, streamFactory)
         }
 
         private fun platformTrustManager(): X509TrustManager {

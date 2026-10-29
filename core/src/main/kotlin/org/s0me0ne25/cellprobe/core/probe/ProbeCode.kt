@@ -67,4 +67,11 @@ data class ProbeOutcome(
     val httpStatus: Int? = null,
     /** `<title>` of the page, if the body was read. For diagnostics. */
     val pageTitle: String? = null,
+    /** VLESS only: bytes received on the socket, handshake included. */
+    val receivedBytes: Long? = null,
+    /**
+     * The error that ended the probe, see [ProbeErrorClassifier.describe].
+     * Not shown in the UI; kept for the check log.
+     */
+    val errorDetail: String? = null,
 )

@@ -103,6 +103,7 @@
     <string name="diagnostics_code_format">%1$s (%2$s)</string>
     <string name="diagnostics_http_status">HTTP %1$d</string>
     <string name="diagnostics_millis">%1$d ms</string>
+    <string name="diagnostics_received_kb">%1$d KB received</string>
     <string name="diagnostics_page_title">“%1$s”</string>
     <string name="probe_code_ok">Responded</string>
     <string name="probe_code_ok_unverified">Responded, cut-off not checked</string>

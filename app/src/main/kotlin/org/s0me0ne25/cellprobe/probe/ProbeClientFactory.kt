@@ -18,6 +18,7 @@ import org.s0me0ne25.cellprobe.core.probe.ProbePhase
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.util.concurrent.TimeUnit
+import javax.net.SocketFactory
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -59,7 +60,25 @@ class ProbeClientFactory(
             .build()
     }
 
+    /**
+     * Derives the client for one VLESS inbound from the cycle's [base] client:
+     * [dns] maps the SNI to the proxy, [sockets] counts received bytes, and
+     * one connection is kept alive so that all requests of the volume check
+     * share it.
+     */
+    fun inboundClient(base: OkHttpClient, dns: Dns, sockets: SocketFactory): OkHttpClient {
+        val tlsSetup = tls()
+        return base.newBuilder()
+            .dns(dns)
+            .socketFactory(sockets)
+            .sslSocketFactory(tlsSetup.streamSocketFactory, tlsSetup.trustManager)
+            .connectionPool(ConnectionPool(1, INBOUND_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS))
+            .build()
+    }
+
     companion object {
+        private const val INBOUND_KEEP_ALIVE_SECONDS = 30L
+
         /** TLS versions and cipher suites offered by Chrome for Android. */
         val CHROME_LIKE_TLS: ConnectionSpec = ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
             .tlsVersions(TlsVersion.TLS_1_3, TlsVersion.TLS_1_2)

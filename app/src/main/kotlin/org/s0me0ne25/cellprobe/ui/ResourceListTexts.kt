@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import org.s0me0ne25.cellprobe.R
+import org.s0me0ne25.cellprobe.core.probe.CheckListId
 import org.s0me0ne25.cellprobe.core.resources.ListEditError
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.core.resources.ResourceListState
@@ -16,11 +17,15 @@ import org.s0me0ne25.cellprobe.core.vless.VlessError
 /** UI texts for core enums. */
 
 @StringRes
-fun ResourceListId.titleRes(): Int = when (this) {
-    ResourceListId.DOMESTIC -> R.string.list_domestic_title
-    ResourceListId.FOREIGN -> R.string.list_foreign_title
-    ResourceListId.BANNED -> R.string.list_banned_title
-    ResourceListId.PROVIDER -> R.string.list_provider_title
+fun ResourceListId.titleRes(): Int = CheckListId.of(this).titleRes()
+
+@StringRes
+fun CheckListId.titleRes(): Int = when (this) {
+    CheckListId.DOMESTIC -> R.string.list_domestic_title
+    CheckListId.FOREIGN -> R.string.list_foreign_title
+    CheckListId.VLESS -> R.string.vless_title
+    CheckListId.BANNED -> R.string.list_banned_title
+    CheckListId.PROVIDER -> R.string.list_provider_title
 }
 
 @StringRes

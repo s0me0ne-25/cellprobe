@@ -3,21 +3,25 @@
 package org.s0me0ne25.cellprobe.engine
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import org.s0me0ne25.cellprobe.core.probe.CheckListId
 import org.s0me0ne25.cellprobe.core.probe.ListProbeListener
 import org.s0me0ne25.cellprobe.core.probe.ListProbeResult
 import org.s0me0ne25.cellprobe.core.probe.ListProbing
 import org.s0me0ne25.cellprobe.core.probe.WebViewHeaders
 import org.s0me0ne25.cellprobe.core.resources.ResourceListState
+import org.s0me0ne25.cellprobe.core.vless.VlessEntry
 import org.s0me0ne25.cellprobe.probe.HttpsProber
 import org.s0me0ne25.cellprobe.probe.ProbeClientFactory
 import org.s0me0ne25.cellprobe.probe.UserAgentProvider
+import org.s0me0ne25.cellprobe.probe.VlessProber
 
 /**
- * One manual check of the HTTPS resource lists, started by the user.
+ * One manual check of all lists, started by the user.
  * Reads page bodies so that the results show page titles.
  */
 class ManualCheckRunner(
@@ -25,20 +29,28 @@ class ManualCheckRunner(
     private val userAgentProvider: UserAgentProvider,
 ) {
 
-    suspend fun run(lists: List<ResourceListState>, listener: ListProbeListener): List<ListProbeResult> {
+    suspend fun run(
+        lists: List<ResourceListState>,
+        vlessEntries: List<VlessEntry>,
+        listener: ListProbeListener,
+    ): List<ListProbeResult<*>> {
         val userAgent = userAgentProvider.userAgent()
         val headers = WebViewHeaders.navigation(userAgent, UserAgentProvider.systemLanguageTags())
         // Creating the client loads Conscrypt's native library: keep it off the main thread.
         val client = withContext(Dispatchers.IO) { clientFactory.create() }
-        val prober = HttpsProber(client, headers, readBody = true)
+        val httpsProber = HttpsProber(client, headers, readBody = true)
+        val vlessProber = VlessProber(headers, clientFor = { dns, sockets -> clientFactory.inboundClient(client, dns, sockets) })
         return try {
             coroutineScope {
-                lists.map { list ->
-                    async { ListProbing.probeList(list.id, list.entries, prober, listener) }
-                }.awaitAll()
+                val https = lists.map { list ->
+                    async { ListProbing.probeList(CheckListId.of(list.id), list.entries, httpsProber, listener) }
+                }
+                val vless = async { ListProbing.probeList(CheckListId.VLESS, vlessEntries, vlessProber, listener) }
+                (https + vless).awaitAll()
             }
         } finally {
-            client.connectionPool.evictAll()
+            // Closing TLS connections is network I/O; the caller may be on the main thread.
+            withContext(NonCancellable + Dispatchers.IO) { client.connectionPool.evictAll() }
         }
     }
 }

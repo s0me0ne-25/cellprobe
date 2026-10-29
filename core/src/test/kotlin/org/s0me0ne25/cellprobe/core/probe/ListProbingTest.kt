@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.s0me0ne25.cellprobe.core.resources.ResourceEntry
-import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 
 class ListProbingTest {
 
@@ -19,7 +18,7 @@ class ListProbingTest {
     private val c = ResourceEntry("https://c.example")
 
     /** Scripted prober: each entry answers with a code after a delay, per round. */
-    private class FakeProber(private val script: Map<String, List<Pair<Long, ProbeCode>>>) : EntryProber {
+    private class FakeProber(private val script: Map<String, List<Pair<Long, ProbeCode>>>) : EntryProber<ResourceEntry> {
         val calls = mutableMapOf<String, Int>()
 
         override suspend fun probe(entry: ResourceEntry): ProbeOutcome {
@@ -31,13 +30,13 @@ class ListProbingTest {
         }
     }
 
-    private fun codes(result: ListProbeResult) = result.results.map { it.outcome.code }
+    private fun codes(result: ListProbeResult<*>) = result.results.map { it.outcome.code }
 
     @Test
     fun `empty list is not available and not probed`() = runTest {
-        val result = ListProbing.probeList(ResourceListId.PROVIDER, emptyList(), FakeProber(emptyMap()))
+        val result = ListProbing.probeList(CheckListId.PROVIDER, emptyList(), FakeProber(emptyMap()))
         assertFalse(result.available)
-        assertEquals(emptyList<EntryResult>(), result.results)
+        assertEquals(emptyList<EntryResult<ResourceEntry>>(), result.results)
     }
 
     @Test
@@ -49,7 +48,7 @@ class ListProbingTest {
                 c.url to listOf(50L to ProbeCode.TCP_TIMEOUT),
             ),
         )
-        val result = ListProbing.probeList(ResourceListId.DOMESTIC, listOf(a, b, c), prober)
+        val result = ListProbing.probeList(CheckListId.DOMESTIC, listOf(a, b, c), prober)
 
         assertTrue(result.available)
         assertFalse(result.retried)
@@ -66,7 +65,7 @@ class ListProbingTest {
                 b.url to listOf(2_000L to ProbeCode.OK),
             ),
         )
-        val result = ListProbing.probeList(ResourceListId.PROVIDER, listOf(a, b), prober)
+        val result = ListProbing.probeList(CheckListId.PROVIDER, listOf(a, b), prober)
 
         assertEquals(listOf(ProbeCode.OK, ProbeCode.OK), codes(result))
         assertEquals(2_000L, currentTime)
@@ -80,7 +79,7 @@ class ListProbingTest {
                 b.url to listOf(100L to ProbeCode.TCP_RESET, 300L to ProbeCode.TCP_RESET),
             ),
         )
-        val result = ListProbing.probeList(ResourceListId.FOREIGN, listOf(a, b), prober)
+        val result = ListProbing.probeList(CheckListId.FOREIGN, listOf(a, b), prober)
 
         assertTrue(result.retried)
         assertTrue(result.available)
@@ -91,7 +90,7 @@ class ListProbingTest {
     @Test
     fun `retry happens only once`() = runTest {
         val prober = FakeProber(mapOf(a.url to listOf(10L to ProbeCode.DNS_FAIL)))
-        val result = ListProbing.probeList(ResourceListId.BANNED, listOf(a), prober)
+        val result = ListProbing.probeList(CheckListId.BANNED, listOf(a), prober)
 
         assertTrue(result.retried)
         assertFalse(result.available)
@@ -99,23 +98,37 @@ class ListProbingTest {
     }
 
     @Test
-    fun `unverified VLESS-style success counts as reachable`() = runTest {
+    fun `unverified VLESS success counts as reachable`() = runTest {
         val prober = FakeProber(mapOf(a.url to listOf(10L to ProbeCode.OK_UNVERIFIED)))
-        val result = ListProbing.probeList(ResourceListId.DOMESTIC, listOf(a), prober)
+        val result = ListProbing.probeList(CheckListId.VLESS, listOf(a), prober)
         assertTrue(result.available)
         assertFalse(result.retried)
+    }
+
+    @Test
+    fun `VLESS inbounds are all probed`() = runTest {
+        val prober = FakeProber(
+            mapOf(
+                a.url to listOf(100L to ProbeCode.OK),
+                b.url to listOf(2_000L to ProbeCode.STALLED),
+            ),
+        )
+        val result = ListProbing.probeList(CheckListId.VLESS, listOf(a, b), prober)
+
+        assertEquals(listOf(ProbeCode.OK, ProbeCode.STALLED), codes(result))
+        assertEquals(2_000L, currentTime)
     }
 
     @Test
     fun `listener sees rounds and every entry`() = runTest {
         val events = mutableListOf<String>()
         val listener = object : ListProbeListener {
-            override fun onRoundStarted(listId: ResourceListId, round: Int) {
+            override fun onRoundStarted(listId: CheckListId, round: Int) {
                 events += "round $round"
             }
 
-            override fun onEntryFinished(listId: ResourceListId, index: Int, result: EntryResult) {
-                events += "$index ${result.outcome.code}"
+            override fun onEntryFinished(listId: CheckListId, index: Int, outcome: ProbeOutcome) {
+                events += "$index ${outcome.code}"
             }
         }
         val prober = FakeProber(
@@ -124,7 +137,7 @@ class ListProbingTest {
                 b.url to listOf(500L to ProbeCode.OK),
             ),
         )
-        ListProbing.probeList(ResourceListId.DOMESTIC, listOf(a, b), prober, listener)
+        ListProbing.probeList(CheckListId.DOMESTIC, listOf(a, b), prober, listener)
         assertEquals(listOf("round 1", "0 OK", "1 SKIPPED"), events)
     }
 }

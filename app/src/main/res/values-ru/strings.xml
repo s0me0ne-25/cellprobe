@@ -103,6 +103,7 @@
     <string name="diagnostics_code_format">%1$s (%2$s)</string>
     <string name="diagnostics_http_status">HTTP %1$d</string>
     <string name="diagnostics_millis">%1$d мс</string>
+    <string name="diagnostics_received_kb">получено %1$d КБ</string>
     <string name="diagnostics_page_title">«%1$s»</string>
     <string name="probe_code_ok">Ответил</string>
     <string name="probe_code_ok_unverified">Ответил, обрыв не проверен</string>
