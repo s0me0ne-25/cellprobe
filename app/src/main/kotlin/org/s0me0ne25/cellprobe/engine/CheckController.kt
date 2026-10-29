@@ -175,6 +175,8 @@ class CheckController(
                         readAgain = ::readNetworkState,
                     )
                 },
+                // Requests fail at once in airplane mode, before the loss is confirmed.
+                lossAfterWork = { ConnectivityWatch.confirmedLoss(read = ::readNetworkState) },
             )
             when (outcome) {
                 is ConnectivityWatch.Outcome.Completed -> {

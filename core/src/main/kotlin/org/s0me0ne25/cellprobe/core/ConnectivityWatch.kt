@@ -55,14 +55,36 @@ object ConnectivityWatch {
         .first { !NetworkClassifier.needsProbes(it) }
 
     /**
+     * The current state if it does not allow probes and still does not after
+     * [confirmation]; null otherwise.
+     */
+    suspend fun confirmedLoss(
+        read: suspend () -> NetworkState,
+        confirmation: Duration = CONFIRMATION_DELAY,
+    ): NetworkState? {
+        if (NetworkClassifier.needsProbes(read())) return null
+        delay(confirmation)
+        return read().takeIf { !NetworkClassifier.needsProbes(it) }
+    }
+
+    /**
      * Runs [work] until it completes or [loss] returns, whichever comes
      * first; the other one is cancelled.
+     *
+     * Requests often fail at once when the network goes away, so [work] may
+     * well finish before [loss] has confirmed it. [lossAfterWork] is asked
+     * after [work] completes (typically [confirmedLoss]): a state it returns
+     * still makes the outcome [Outcome.Interrupted].
      */
-    suspend fun <T> runUntilLoss(work: suspend () -> T, loss: suspend () -> NetworkState): Outcome<T> =
-        coroutineScope {
+    suspend fun <T> runUntilLoss(
+        work: suspend () -> T,
+        loss: suspend () -> NetworkState,
+        lossAfterWork: suspend () -> NetworkState? = { null },
+    ): Outcome<T> {
+        val first = coroutineScope {
             val working = async { work() }
             val losing = async { loss() }
-            select {
+            select<Outcome<T>> {
                 working.onAwait { value ->
                     losing.cancel()
                     Outcome.Completed(value)
@@ -73,4 +95,7 @@ object ConnectivityWatch {
                 }
             }
         }
+        if (first is Outcome.Interrupted) return first
+        return lossAfterWork()?.let { Outcome.Interrupted(it) } ?: first
+    }
 }

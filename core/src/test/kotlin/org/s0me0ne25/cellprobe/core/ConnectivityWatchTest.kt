@@ -102,4 +102,41 @@ class ConnectivityWatchTest {
         assertFalse(workFinished)
         assertEquals(3_000L, currentTime)
     }
+
+    @Test
+    fun `work that fails fast after the loss is still interrupted`() = runTest {
+        // Airplane mode: every request fails at once, long before the watch
+        // has confirmed the loss.
+        var current = online
+        val outcome = ConnectivityWatch.runUntilLoss(
+            work = {
+                current = airplane
+                "all failed"
+            },
+            loss = { awaitCancellation() },
+            lossAfterWork = { ConnectivityWatch.confirmedLoss(read = { current }) },
+        )
+
+        assertEquals(Outcome.Interrupted(airplane), outcome)
+        assertEquals(ConnectivityWatch.CONFIRMATION_DELAY.inWholeMilliseconds, currentTime)
+    }
+
+    @Test
+    fun `network still there after the work means completed`() = runTest {
+        val outcome = ConnectivityWatch.runUntilLoss(
+            work = { "results" },
+            loss = { awaitCancellation() },
+            lossAfterWork = { ConnectivityWatch.confirmedLoss(read = { online }) },
+        )
+
+        assertEquals(Outcome.Completed("results"), outcome)
+        assertEquals(0L, currentTime)
+    }
+
+    @Test
+    fun `confirmed loss ignores a moment without a network`() = runTest {
+        var readings = 0
+        val loss = ConnectivityWatch.confirmedLoss(read = { if (readings++ == 0) noService else wifi })
+        assertEquals(null, loss)
+    }
 }
