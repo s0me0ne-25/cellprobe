@@ -161,4 +161,30 @@
     <string name="probe_code_stalled">Передача данных оборвалась</string>
     <string name="probe_code_content_mismatch">Маркер не найден на странице</string>
     <string name="probe_code_skipped">Не проверялся: уже ответил другой ресурс</string>
+
+    <!-- Unblocking apps (roles) -->
+    <string name="settings_section_apps">Приложения для разблокировки</string>
+    <string name="role_vpn_client">VPN-клиент</string>
+    <string name="role_vpn_client_description">Открывается при стандартных блокировках.</string>
+    <string name="role_vpn_client_about">Основная программа, при помощи которой вы подключаете VPN, — например, Hiddify, Happ или Exclave. При включении olcRTC или I2P вам может понадобиться вручную переключить профиль и там.</string>
+    <string name="role_olcrtc">Клиент olcRTC</string>
+    <string name="role_olcrtc_description">Открывается в режиме белого списка.</string>
+    <string name="role_olcrtc_about">olcRTC — это технология, специально предназначенная для борьбы с режимом белых списков. Она использует в качестве канала связи видеозвонки в различных доверенных мессенджерах, серверы которых официально внесены в белые списки.</string>
+    <string name="role_i2p">Клиент I2P</string>
+    <string name="role_i2p_description">Открывается, когда VLESS заблокирован.</string>
+    <string name="role_i2p_about">I2P — это сеть из десятков тысяч узлов, поддерживаемых энтузиастами со всего мира. Ваш трафик направляется через несколько случайно выбранных из них. I2P не работает при белых списках, но чрезвычайно устойчива при стандартных блокировках.</string>
+    <string name="role_not_set">Не выбрано</string>
+    <string name="role_app_missing">Выбранное приложение не установлено</string>
+    <string name="role_app_missing_short">не установлено</string>
+    <string name="app_picker_search">Поиск</string>
+    <string name="app_picker_clear">Сбросить</string>
+    <string name="action_open_app">Открыть %1$s</string>
+    <string name="action_choose_vpn_client">Выбрать VPN-клиент</string>
+    <string name="action_choose_olcrtc">Выбрать клиент olcRTC</string>
+    <string name="action_choose_i2p">Выбрать клиент I2P</string>
+    <string name="action_open_wifi_settings">Настройки Wi-Fi</string>
+    <string name="action_open_mobile_settings">Настройки мобильной сети</string>
+    <string name="action_open_network_settings">Настройки сети</string>
+    <string name="main_provider_pages_empty">Личные кабинеты провайдеров не указаны. Добавьте их в настройках.</string>
+    <string name="main_launch_failed">Не удалось открыть %1$s. Выберите приложение заново.</string>
 </resources>

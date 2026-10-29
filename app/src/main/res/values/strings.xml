@@ -161,4 +161,30 @@
     <string name="probe_code_stalled">Data transfer stopped</string>
     <string name="probe_code_content_mismatch">Marker not found on the page</string>
     <string name="probe_code_skipped">Not checked: another entry already responded</string>
+
+    <!-- Unblocking apps (roles) -->
+    <string name="settings_section_apps">Unblocking apps</string>
+    <string name="role_vpn_client">VPN client</string>
+    <string name="role_vpn_client_description">Opened under standard blocking.</string>
+    <string name="role_vpn_client_about">The main app you connect to a VPN with, such as Hiddify, Happ or Exclave. When you turn on olcRTC or I2P, you may need to switch the profile there by hand as well.</string>
+    <string name="role_olcrtc">olcRTC client</string>
+    <string name="role_olcrtc_description">Opened in whitelist mode.</string>
+    <string name="role_olcrtc_about">olcRTC is a technology built to resist whitelist mode. It carries traffic over video calls in trusted messengers whose servers are officially whitelisted.</string>
+    <string name="role_i2p">I2P client</string>
+    <string name="role_i2p_description">Opened when VLESS is blocked.</string>
+    <string name="role_i2p_about">I2P is a network of tens of thousands of nodes run by volunteers all over the world. Your traffic goes through several of them picked at random. I2P does not work under whitelists but is extremely resilient under standard blocking.</string>
+    <string name="role_not_set">Not chosen</string>
+    <string name="role_app_missing">The chosen app is not installed</string>
+    <string name="role_app_missing_short">not installed</string>
+    <string name="app_picker_search">Search</string>
+    <string name="app_picker_clear">Clear</string>
+    <string name="action_open_app">Open %1$s</string>
+    <string name="action_choose_vpn_client">Choose a VPN client</string>
+    <string name="action_choose_olcrtc">Choose an olcRTC client</string>
+    <string name="action_choose_i2p">Choose an I2P client</string>
+    <string name="action_open_wifi_settings">Wi-Fi settings</string>
+    <string name="action_open_mobile_settings">Mobile network settings</string>
+    <string name="action_open_network_settings">Network settings</string>
+    <string name="main_provider_pages_empty">No provider account pages added. Add them in the settings.</string>
+    <string name="main_launch_failed">Cannot open %1$s. Choose the app again.</string>
 </resources>

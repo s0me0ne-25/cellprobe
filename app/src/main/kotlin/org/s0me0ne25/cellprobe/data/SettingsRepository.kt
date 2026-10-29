@@ -6,6 +6,7 @@ import androidx.datastore.core.DataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import org.s0me0ne25.cellprobe.core.actions.AppRole
 import org.s0me0ne25.cellprobe.core.resources.ListEditError
 import org.s0me0ne25.cellprobe.core.resources.ListEditResult
 import org.s0me0ne25.cellprobe.core.resources.ResourceEntry
@@ -29,6 +30,19 @@ class SettingsRepository(private val dataStore: DataStore<AppSettings>) {
     val vlessEntries: Flow<List<VlessEntry>> = dataStore.data
         .map { it.vlessEntries }
         .distinctUntilChanged()
+
+    /** Package name of the app assigned to each role. */
+    val appRoles: Flow<Map<AppRole, String>> = dataStore.data
+        .map { it.appRoles }
+        .distinctUntilChanged()
+
+    /** Assigns [packageName] to [role], or clears the role if it is null. */
+    suspend fun setAppRole(role: AppRole, packageName: String?) {
+        dataStore.updateData { settings ->
+            val roles = if (packageName == null) settings.appRoles - role else settings.appRoles + (role to packageName)
+            settings.copy(appRoles = roles)
+        }
+    }
 
     /**
      * Applies [edit] to the VLESS list atomically.

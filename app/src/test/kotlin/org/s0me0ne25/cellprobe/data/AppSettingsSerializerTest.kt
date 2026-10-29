@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.s0me0ne25.cellprobe.core.actions.AppRole
 import org.s0me0ne25.cellprobe.core.resources.ResourceEntry
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.core.resources.StoredResourceList
@@ -37,6 +38,7 @@ class AppSettingsSerializerTest {
                 ),
             ),
             vlessEntries = listOf(VlessEntry("[2001:db8::1]", 8443, "a.example.com", "chrome", "Дом")),
+            appRoles = mapOf(AppRole.VPN_CLIENT to "com.example.vpn", AppRole.I2P to "com.example.i2p"),
         )
         assertEquals(settings, read(write(settings)))
     }

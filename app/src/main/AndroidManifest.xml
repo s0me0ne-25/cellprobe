@@ -7,6 +7,17 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!--
+        Apps that can be launched from the home screen: the candidates for the
+        VPN client, olcRTC and I2P roles. No QUERY_ALL_PACKAGES.
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
+    <!--
         Backups are disabled: settings contain proxy addresses.
         allowBackup and fullBackupContent cover API < 31, dataExtractionRules
         covers cloud backup and device-to-device transfer on API 31+.

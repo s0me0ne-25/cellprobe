@@ -6,8 +6,8 @@ import android.content.Context
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.dataStoreFile
-import org.s0me0ne25.cellprobe.data.AppSettings
 import org.s0me0ne25.cellprobe.core.journal.TrafficTotals
+import org.s0me0ne25.cellprobe.data.AppSettings
 import org.s0me0ne25.cellprobe.data.AppSettingsSerializer
 import org.s0me0ne25.cellprobe.data.JournalStore
 import org.s0me0ne25.cellprobe.data.SettingsRepository
@@ -18,6 +18,7 @@ import org.s0me0ne25.cellprobe.engine.ManualCheckRunner
 import org.s0me0ne25.cellprobe.probe.ProbeClientFactory
 import org.s0me0ne25.cellprobe.probe.TlsSetup
 import org.s0me0ne25.cellprobe.probe.UserAgentProvider
+import org.s0me0ne25.cellprobe.system.InstalledApps
 import org.s0me0ne25.cellprobe.system.NetworkStateReader
 import java.io.File
 
@@ -49,6 +50,8 @@ class AppContainer(context: Context) {
     private val manualCheckRunner: ManualCheckRunner by lazy { ManualCheckRunner(probeClientFactory, userAgentProvider) }
 
     private val networkStateReader: NetworkStateReader by lazy { NetworkStateReader(appContext) }
+
+    val installedApps: InstalledApps by lazy { InstalledApps(appContext) }
 
     val journalStore: JournalStore by lazy { JournalStore(File(appContext.filesDir, JOURNAL_FILE)) }
 

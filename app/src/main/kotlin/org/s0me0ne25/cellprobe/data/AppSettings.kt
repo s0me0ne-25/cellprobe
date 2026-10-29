@@ -4,9 +4,10 @@ package org.s0me0ne25.cellprobe.data
 
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.Serializer
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import org.s0me0ne25.cellprobe.core.actions.AppRole
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.core.resources.StoredResourceList
 import org.s0me0ne25.cellprobe.core.vless.VlessEntry
@@ -21,6 +22,8 @@ import java.io.OutputStream
 data class AppSettings(
     val resourceLists: Map<ResourceListId, StoredResourceList> = emptyMap(),
     val vlessEntries: List<VlessEntry> = emptyList(),
+    /** Package name of the app assigned to each role. */
+    val appRoles: Map<AppRole, String> = emptyMap(),
 )
 
 object AppSettingsSerializer : Serializer<AppSettings> {

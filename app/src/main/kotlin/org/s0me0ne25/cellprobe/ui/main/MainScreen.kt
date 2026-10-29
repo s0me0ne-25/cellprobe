@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.s0me0ne25.cellprobe.R
@@ -52,6 +53,14 @@ fun MainScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val traffic by viewModel.traffic.collectAsStateWithLifecycle()
+    val roles by viewModel.roles.collectAsStateWithLifecycle()
+    val providerPages by viewModel.providerPages.collectAsStateWithLifecycle()
+
+    // Apps may have been installed or removed while the screen was away.
+    LifecycleResumeEffect(Unit) {
+        viewModel.refreshApps()
+        onPauseOrDispose {}
+    }
 
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
@@ -65,6 +74,9 @@ fun MainScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             StatusCard(state)
+            state.result?.let { result ->
+                StatusActionsSection(result, state.sections, roles, providerPages, viewModel::launchIntent)
+            }
             state.sections.firstOrNull { it.id == CheckListId.VLESS && it.rows.isNotEmpty() }?.let { ListSectionCard(it) }
             DiagnosticsCard(state, traffic)
             Button(onClick = viewModel::checkNow, enabled = !state.running) {
