@@ -7,8 +7,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -100,7 +100,9 @@ fun AppPickerDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(role.titleRes())) },
         text = {
-            Column {
+            // The dialog takes all the height the window allows, whatever the
+            // number of apps: filtering must not make it shrink and jump.
+            Column(modifier = Modifier.fillMaxHeight()) {
                 OutlinedTextField(
                     state = query,
                     label = { Text(stringResource(R.string.app_picker_search)) },
@@ -109,7 +111,7 @@ fun AppPickerDialog(
                 )
                 val all = apps
                 if (all == null) {
-                    Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                    Box(modifier = Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
                 } else {
@@ -117,7 +119,7 @@ fun AppPickerDialog(
                     val shown = remember(all, text) {
                         if (text.isEmpty()) all else all.filter { it.label.contains(text, ignoreCase = true) }
                     }
-                    LazyColumn(modifier = Modifier.heightIn(max = 400.dp).padding(top = 8.dp)) {
+                    LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 8.dp)) {
                         items(shown, key = { it.packageName }) { app ->
                             ListItem(
                                 headlineContent = { Text(app.label) },

@@ -6,9 +6,13 @@ import kotlinx.serialization.Serializable
 import org.s0me0ne25.cellprobe.core.NetworkStatus
 import org.s0me0ne25.cellprobe.core.NetworkType
 
-/** Apps the user assigns to statuses (spec §9.2); one app may take several roles. */
+/**
+ * Apps the user assigns to statuses (spec §9.2); one app may take several
+ * roles. Declared, and shown in the settings, in order of growing severity
+ * of the filtering they are meant for. Stored by name, so reordering is safe.
+ */
 @Serializable
-enum class AppRole { VPN_CLIENT, OLCRTC, I2P }
+enum class AppRole { VPN_CLIENT, I2P, OLCRTC }
 
 /** System settings screens a status may lead to. */
 enum class SettingsScreen { WIFI, MOBILE_NETWORK, NETWORK }
