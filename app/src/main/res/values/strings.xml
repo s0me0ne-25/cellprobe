@@ -23,9 +23,9 @@
     <string name="list_foreign_title">Blocked in whitelist mode</string>
     <string name="list_foreign_description">Reachable unless the network is in whitelist mode.</string>
     <string name="list_banned_title">Known blocked</string>
-    <string name="list_banned_description">If any of these is reachable, traffic goes through a proxy or Cellprobe is not excluded from it.</string>
+    <string name="list_banned_description">Reachable if the network is not filtered (VPN on the router, regulatory firewalls are down, a foreign provider, etc.) or Cellprobe is not excluded from the VPN client.</string>
     <string name="list_provider_title">Provider account pages</string>
-    <string name="list_provider_description">Your mobile operator and, if needed, your home ISP. Checked only when nothing else is reachable.</string>
+    <string name="list_provider_description">Used to detect disconnection for non-payment. Add the account pages of the providers your device most often connects through, both over mobile data and Wi-Fi.</string>
     <string name="list_summary_preset">preset</string>
     <string name="list_summary_customized">customized</string>
     <string name="list_summary_empty">empty</string>
@@ -66,7 +66,7 @@
     <!-- VLESS list -->
     <string name="vless_title">VLESS inbounds</string>
     <string name="vless_description_short">Your VLESS/Reality servers.</string>
-    <string name="vless_description">Your VLESS/Reality servers. Paste a vless:// link from your proxy app: only the address, port, SNI and fingerprint are kept, the UUID and keys are discarded on paste and never stored.</string>
+    <string name="vless_description">Your VLESS/Reality servers. Paste a vless:// link from your VPN client: only the address, port, SNI and fingerprint are kept, the UUID and keys are discarded on paste and never stored.</string>
     <string name="vless_empty">No inbounds yet. Tap + and paste a vless:// link.</string>
     <string name="vless_sni_line">SNI %1$s</string>
     <string name="vless_dialog_add_title">New inbound</string>

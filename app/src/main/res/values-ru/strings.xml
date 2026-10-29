@@ -21,9 +21,9 @@
     <string name="list_foreign_title">Блокируются в режиме белых списков</string>
     <string name="list_foreign_description">Доступны, пока сеть не в режиме белого списка.</string>
     <string name="list_banned_title">Заведомо заблокированные</string>
-    <string name="list_banned_description">Если доступен хоть один из них, трафик идёт через прокси или Cellprobe не добавлен в исключения.</string>
+    <string name="list_banned_description">Доступны, если сеть без блокировок (VPN на роутере, отказ ТСПУ, зарубежный провайдер и т.д.), или Cellprobe не добавлен в исключения VPN-клиента.</string>
     <string name="list_provider_title">Личные кабинеты провайдеров</string>
-    <string name="list_provider_description">Ваш мобильный оператор и, при необходимости, домашний провайдер. Проверяются, только когда не отвечает ничего другое.</string>
+    <string name="list_provider_description">Позволяют обнаруживать отключение за неуплату. Укажите ЛК провайдеров, к которым наиболее часто подключается ваше устройство как по сотовой сети, так и по Wi-Fi.</string>
     <string name="list_summary_preset">пресет</string>
     <string name="list_summary_customized">изменён</string>
     <string name="list_summary_empty">пусто</string>
@@ -66,7 +66,7 @@
     <!-- VLESS list -->
     <string name="vless_title">VLESS-входы</string>
     <string name="vless_description_short">Ваши VLESS/Reality-серверы.</string>
-    <string name="vless_description">Ваши VLESS/Reality-серверы. Вставьте vless://-ссылку из проксификатора: сохраняются только адрес, порт, SNI и отпечаток, а UUID и ключи отбрасываются сразу при вставке и нигде не хранятся.</string>
+    <string name="vless_description">Ваши VLESS/Reality-серверы. Вставьте vless://-ссылку из VPN-клиента: сохраняются только адрес, порт, SNI и отпечаток, а UUID и ключи отбрасываются сразу при вставке и нигде не хранятся.</string>
     <string name="vless_empty">Входов пока нет. Нажмите + и вставьте vless://-ссылку.</string>
     <string name="vless_sni_line">SNI %1$s</string>
     <string name="vless_dialog_add_title">Новый вход</string>
