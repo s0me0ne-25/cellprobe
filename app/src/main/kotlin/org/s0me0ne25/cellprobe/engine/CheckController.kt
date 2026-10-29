@@ -11,9 +11,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.s0me0ne25.cellprobe.core.ConnectivityWatch
 import org.s0me0ne25.cellprobe.core.ListAvailability
 import org.s0me0ne25.cellprobe.core.NetworkClassifier
 import org.s0me0ne25.cellprobe.core.NetworkState
@@ -53,6 +55,8 @@ data class CheckResult(
     val finishedAtMillis: Long,
     /** False when the status followed from the system state and no list was probed. */
     val probed: Boolean,
+    /** The network went away mid-check; the status follows from the system state. */
+    val interrupted: Boolean = false,
 )
 
 data class CheckState(
@@ -67,8 +71,10 @@ data class CheckState(
 
 /**
  * Runs a full check on request: the system state first (spec §3), then the
- * lists if needed (spec §5), then the classifier (spec §4). One check at a
- * time; the state is shared by every screen of the process.
+ * lists if needed (spec §5), then the classifier (spec §4). The system state
+ * is followed while the lists are probed: if the network goes away, the
+ * probing stops and the status follows from the system state. One check at
+ * a time; the state is shared by every screen of the process.
  */
 class CheckController(
     private val settings: SettingsRepository,
@@ -94,7 +100,7 @@ class CheckController(
         mutableState.update { it.copy(running = true, sections = emptyList(), failed = false) }
         try {
             val trafficBefore = AppTraffic.totalBytes()
-            val networkState = withContext(Dispatchers.IO) { networkStateReader.read() }
+            val networkState = readNetworkState()
             if (!NetworkClassifier.needsProbes(networkState)) {
                 finish(NetworkClassifier.classify(networkState, null), networkState, probed = false, trafficBefore)
                 return
@@ -113,10 +119,29 @@ class CheckController(
                 )
             }
 
-            val results = runner.run(lists, vlessEntries, progressListener)
-            results.forEach { result -> updateSection(result.listId) { it.copy(available = result.available) } }
-            val status = NetworkClassifier.classify(networkState, ListAvailability.of(results))
-            finish(status, networkState, probed = true, trafficBefore)
+            val outcome = ConnectivityWatch.runUntilLoss(
+                work = { runner.run(lists, vlessEntries, progressListener) },
+                loss = {
+                    ConnectivityWatch.awaitLoss(
+                        readings = networkStateReader.changes().map { readNetworkState() },
+                        readAgain = ::readNetworkState,
+                    )
+                },
+            )
+            when (outcome) {
+                is ConnectivityWatch.Outcome.Completed -> {
+                    val results = outcome.value
+                    results.forEach { result -> updateSection(result.listId) { it.copy(available = result.available) } }
+                    val status = NetworkClassifier.classify(networkState, ListAvailability.of(results))
+                    finish(status, networkState, probed = true, trafficBefore)
+                }
+                is ConnectivityWatch.Outcome.Interrupted -> {
+                    // Results of the requests cut short mean nothing: drop them.
+                    mutableState.update { it.copy(sections = emptyList()) }
+                    val lost = outcome.state
+                    finish(NetworkClassifier.classify(lost, null), lost, probed = false, trafficBefore, interrupted = true)
+                }
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
@@ -126,8 +151,16 @@ class CheckController(
         }
     }
 
-    private suspend fun finish(status: NetworkStatus, networkState: NetworkState, probed: Boolean, trafficBefore: Long?) {
-        val result = CheckResult(status, networkState.activeNetwork, clock(), probed)
+    private suspend fun readNetworkState(): NetworkState = withContext(Dispatchers.IO) { networkStateReader.read() }
+
+    private suspend fun finish(
+        status: NetworkStatus,
+        networkState: NetworkState,
+        probed: Boolean,
+        trafficBefore: Long?,
+        interrupted: Boolean = false,
+    ) {
+        val result = CheckResult(status, networkState.activeNetwork, clock(), probed, interrupted)
         val sections = mutableState.value.sections
         mutableState.update { it.copy(result = result) }
 
@@ -146,6 +179,7 @@ class CheckController(
         status = result.status,
         networkType = result.networkType,
         trafficBytes = trafficBytes,
+        interrupted = result.interrupted,
         lists = sections.map { section ->
             JournalList(
                 id = section.id,

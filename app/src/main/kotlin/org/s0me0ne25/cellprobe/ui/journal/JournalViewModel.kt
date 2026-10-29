@@ -17,18 +17,20 @@ import org.s0me0ne25.cellprobe.ui.appContainer
 
 class JournalViewModel(private val journal: JournalStore) : ViewModel() {
 
-    /** Entries, newest first; null while the journal is being read. */
+    /**
+     * Entries, newest first; null while the journal is being read. Kept up
+     * to date even while the screen is closed, so that it never opens with a
+     * stale list that a fresh one replaces a moment later.
+     */
     val entries: StateFlow<List<JournalEntry>?> = journal.entries
         .map { it.asReversed() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     fun clear() {
         viewModelScope.launch { journal.clear() }
     }
 
     companion object {
-        private const val STOP_TIMEOUT_MILLIS = 5_000L
-
         val Factory = viewModelFactory {
             initializer { JournalViewModel(appContainer().journalStore) }
         }

@@ -27,6 +27,8 @@ data class JournalEntry(
     val trafficBytes: Long? = null,
     /** Empty when the status followed from the system state alone. */
     val lists: List<JournalList> = emptyList(),
+    /** The network went away mid-check; the status follows from the system state. */
+    val interrupted: Boolean = false,
 )
 
 @Serializable

@@ -22,6 +22,7 @@
     <string name="journal_clear_confirm_title">Очистить журнал?</string>
     <string name="journal_clear_confirm_text">Все записи будут удалены.</string>
     <string name="journal_not_probed">ресурсы не проверялись</string>
+    <string name="journal_interrupted">проверка прервана</string>
 
     <!-- Network statuses (spec §4) -->
     <string name="status_normal">Стандартные блокировки</string>
@@ -134,6 +135,7 @@
     <string name="diagnostics_repeat">Повторить</string>
     <string name="diagnostics_failed">Не удалось запустить проверку.</string>
     <string name="diagnostics_not_probed">Ресурсы не проверялись: состояние определено по системным признакам.</string>
+    <string name="diagnostics_interrupted">Проверка прервана: сеть пропала. Состояние определено по системным признакам.</string>
     <string name="diagnostics_verdict_checking">проверяется…</string>
     <string name="diagnostics_verdict_retrying">повторная проверка…</string>
     <string name="diagnostics_verdict_available">доступен</string>

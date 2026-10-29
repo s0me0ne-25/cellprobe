@@ -4,12 +4,18 @@ package org.s0me0ne25.cellprobe.system
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.provider.Settings
 import android.telephony.SubscriptionManager
 import android.telephony.TelephonyManager
 import androidx.core.content.getSystemService
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.onStart
 import org.s0me0ne25.cellprobe.core.NetworkState
 import org.s0me0ne25.cellprobe.core.NetworkType
 
@@ -35,6 +41,31 @@ class NetworkStateReader(context: Context) {
             mobileDataEnabled = mobileDataEnabled(),
         )
     }
+
+    /**
+     * Emits on subscription and whenever the default network of this app
+     * appears, goes away or changes its capabilities (e.g. a captive portal
+     * is detected); the state itself is read with [read].
+     */
+    fun changes(): Flow<Unit> = callbackFlow {
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                trySend(Unit)
+            }
+
+            override fun onLost(network: Network) {
+                trySend(Unit)
+            }
+
+            override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+                trySend(Unit)
+            }
+        }
+        connectivity.registerDefaultNetworkCallback(callback)
+        awaitClose { connectivity.unregisterNetworkCallback(callback) }
+    }
+        .onStart { emit(Unit) }
+        .conflate()
 
     private fun transportOf(capabilities: NetworkCapabilities): NetworkType = when {
         capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> NetworkType.WIFI

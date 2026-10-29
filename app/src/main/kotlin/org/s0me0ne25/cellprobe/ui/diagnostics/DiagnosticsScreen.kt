@@ -88,7 +88,9 @@ fun DiagnosticsScreen(
                             style = MaterialTheme.typography.titleMedium,
                         )
                         Text(
-                            text = stringResource(R.string.diagnostics_not_probed),
+                            text = stringResource(
+                                if (result.interrupted) R.string.diagnostics_interrupted else R.string.diagnostics_not_probed,
+                            ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

@@ -62,14 +62,17 @@ fun JournalScreen(
     // Expanded entries, by time: stable across new checks at the top.
     var expanded by rememberSaveable { mutableStateOf(emptyList<Long>()) }
 
-    // Items are keyed, so a new entry inserted above keeps the previous top
-    // entry in place and the new one ends up above the screen (e.g. when the
-    // screen opens with the cached list and the fresh one arrives). Follow
-    // the top unless the user has scrolled down into older entries.
+    // Opening the journal always shows the newest entry. Later entries are
+    // added above without moving the list, so reading older ones is not
+    // disturbed; a configuration change is not an opening.
     val listState = rememberLazyListState()
-    val newest = entries?.firstOrNull()?.timeMillis
-    LaunchedEffect(newest) {
-        if (newest != null && listState.firstVisibleItemIndex <= 1) listState.scrollToItem(0)
+    var openedAtTop by rememberSaveable { mutableStateOf(false) }
+    val loaded = entries != null
+    LaunchedEffect(loaded) {
+        if (loaded && !openedAtTop) {
+            listState.scrollToItem(0)
+            openedAtTop = true
+        }
     }
 
     Scaffold(
@@ -176,13 +179,16 @@ private fun JournalEntryCard(entry: JournalEntry, expanded: Boolean, onToggle: (
     }
 }
 
-/** "Mobile network · 1.2 MB", plus a note if nothing was probed. */
+/** "Mobile network · 1.2 MB", plus a note if nothing was probed or the check was cut short. */
 @Composable
 private fun entryDetails(entry: JournalEntry): String {
     val context = LocalContext.current
     val parts = mutableListOf(stringResource(entry.networkType.labelRes()))
     entry.trafficBytes?.let { parts += Formatter.formatShortFileSize(context, it) }
-    if (entry.lists.isEmpty()) parts += stringResource(R.string.journal_not_probed)
+    when {
+        entry.interrupted -> parts += stringResource(R.string.journal_interrupted)
+        entry.lists.isEmpty() -> parts += stringResource(R.string.journal_not_probed)
+    }
     return parts.joinToString(" · ")
 }
 
