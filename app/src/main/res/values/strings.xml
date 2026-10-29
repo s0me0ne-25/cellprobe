@@ -111,7 +111,7 @@
     <string name="probe_code_tcp_reset">Connection refused or reset</string>
     <string name="probe_code_tls_fail">TLS handshake failed</string>
     <string name="probe_code_cert_invalid">Invalid certificate</string>
-    <string name="probe_code_cert_ru_ca">Russian state CA certificate</string>
+    <string name="probe_code_cert_ru_ca">Russian state certificate</string>
     <string name="probe_code_http_error">Connected, but no HTTP response</string>
     <string name="probe_code_stalled">Data transfer stopped</string>
     <string name="probe_code_content_mismatch">Marker not found on the page</string>
