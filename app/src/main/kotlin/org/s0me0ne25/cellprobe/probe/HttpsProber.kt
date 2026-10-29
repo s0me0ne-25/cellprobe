@@ -83,10 +83,11 @@ class HttpsProber(
         } catch (e: Exception) {
             // Includes IOException from cancellation; the caller's coroutine
             // is cancelled then and this outcome is discarded.
+            val failure = ProbeErrorClassifier.mostInformative(holder.failures(e))
             ProbeOutcome(
-                code = ProbeErrorClassifier.classify(holder.phase, e),
+                code = ProbeErrorClassifier.classify(failure.phase, failure.error),
                 durationMillis = elapsedMillis(),
-                errorDetail = ProbeErrorClassifier.describe(e),
+                errorDetail = ProbeErrorClassifier.describe(failure.error),
             )
         }
     }

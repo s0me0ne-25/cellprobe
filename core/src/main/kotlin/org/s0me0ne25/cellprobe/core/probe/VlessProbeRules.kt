@@ -59,6 +59,17 @@ object VlessProbeRules {
         if (receivedBytes >= TARGET_BYTES) ProbeCode.OK else ProbeCode.OK_UNVERIFIED
 
     /**
+     * The failure that decides the outcome: the call's own failure once the
+     * handshake has completed (the connection is established, earlier
+     * attempts no longer matter), otherwise the most informative failure of
+     * all connection attempts.
+     */
+    fun decisiveFailure(failures: List<ProbeFailure>): ProbeFailure {
+        val last = failures.last()
+        return if (last.phase.handshakeCompleted) last else ProbeErrorClassifier.mostInformative(failures)
+    }
+
+    /**
      * Code when the probe failed in [phase] with [error].
      *
      * Before the handshake has completed, the usual phase rules apply. After

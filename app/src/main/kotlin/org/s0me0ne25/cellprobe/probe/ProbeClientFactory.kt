@@ -14,9 +14,12 @@ import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Response
 import okhttp3.TlsVersion
+import org.s0me0ne25.cellprobe.core.probe.ProbeFailure
 import org.s0me0ne25.cellprobe.core.probe.ProbePhase
+import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import javax.net.SocketFactory
 import kotlin.time.Duration
@@ -49,6 +52,9 @@ class ProbeClientFactory(
             .followRedirects(false)
             .followSslRedirects(false)
             .retryOnConnectionFailure(false)
+            // Addresses of a host are tried one after another, not raced:
+            // the phase of each attempt must be known to classify its failure.
+            .fastFallback(false)
             .connectTimeout(timeouts.connect)
             .readTimeout(timeouts.read)
             .writeTimeout(timeouts.read)
@@ -103,10 +109,22 @@ class ProbeClientFactory(
     }
 }
 
-/** Mutable phase of one probe, attached to its request as a tag. */
+/**
+ * Mutable phase of one probe and its failed connection attempts, attached
+ * to its requests as a tag.
+ */
 internal class PhaseHolder {
     @Volatile
     var phase: ProbePhase = ProbePhase.DNS
+
+    private val connectFailures = CopyOnWriteArrayList<ProbeFailure>()
+
+    fun connectFailed(error: IOException) {
+        connectFailures += ProbeFailure(phase, error)
+    }
+
+    /** Failures of every connection attempt, then the call's own [callError]. */
+    fun failures(callError: Throwable): List<ProbeFailure> = connectFailures + ProbeFailure(phase, callError)
 }
 
 /** Follows the connection phases of calls tagged with a [PhaseHolder]. */
@@ -137,6 +155,16 @@ internal object PhaseTracking : EventListener.Factory {
 
             override fun responseHeadersEnd(call: Call, response: Response) {
                 holder.phase = ProbePhase.BODY
+            }
+
+            override fun connectFailed(
+                call: Call,
+                inetSocketAddress: InetSocketAddress,
+                proxy: Proxy,
+                protocol: Protocol?,
+                ioe: IOException,
+            ) {
+                holder.connectFailed(ioe)
             }
         }
     }

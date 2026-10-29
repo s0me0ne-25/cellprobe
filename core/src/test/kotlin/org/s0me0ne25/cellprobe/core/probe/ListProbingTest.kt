@@ -2,6 +2,7 @@
 
 package org.s0me0ne25.cellprobe.core.probe
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
@@ -11,6 +12,8 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.s0me0ne25.cellprobe.core.resources.ResourceEntry
 
+// currentTime of the virtual test clock is still experimental.
+@OptIn(ExperimentalCoroutinesApi::class)
 class ListProbingTest {
 
     private val a = ResourceEntry("https://a.example")

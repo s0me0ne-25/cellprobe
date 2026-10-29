@@ -135,9 +135,10 @@ class VlessProber(
                     }
                     // Includes IOException from cancellation; the caller's
                     // coroutine is cancelled then and this outcome is discarded.
+                    val failure = VlessProbeRules.decisiveFailure(holder.failures(e))
                     return finished(
-                        VlessProbeRules.failureCode(holder.phase, e, sockets.receivedBytes),
-                        ProbeErrorClassifier.describe(e),
+                        VlessProbeRules.failureCode(failure.phase, failure.error, sockets.receivedBytes),
+                        ProbeErrorClassifier.describe(failure.error),
                     )
                 }
                 if (sockets.receivedBytes >= VlessProbeRules.TARGET_BYTES) return finished(ProbeCode.OK)

@@ -9,6 +9,9 @@ import java.security.cert.CertPathValidatorException
 import java.security.cert.CertificateException
 import javax.net.ssl.SSLPeerUnverifiedException
 
+/** A failure of one connection attempt, or of the whole call, in [phase]. */
+data class ProbeFailure(val phase: ProbePhase, val error: Throwable)
+
 /**
  * Maps a probe failure to a [ProbeCode].
  *
@@ -33,6 +36,34 @@ object ProbeErrorClassifier {
             ProbePhase.BODY ->
                 if (timeout || chain.any { it is SocketException }) ProbeCode.STALLED else ProbeCode.HTTP_ERROR
         }
+    }
+
+    /**
+     * Picks the failure that tells the most about the resource.
+     *
+     * A host often has several addresses, and a failed connection attempt is
+     * followed by the next address; the call then reports one of the errors,
+     * not necessarily the meaningful one. A certificate rejected on the first
+     * address says more than a refused connection on the second (an IPv6
+     * address on a network without IPv6, say). The failure that got furthest
+     * wins; among equals, the latest one.
+     */
+    fun mostInformative(failures: List<ProbeFailure>): ProbeFailure {
+        require(failures.isNotEmpty()) { "No failures to choose from" }
+        return failures.withIndex()
+            .maxWith(compareBy({ progress(classify(it.value.phase, it.value.error)) }, { it.index }))
+            .value
+    }
+
+    /** How far a connection got before failing with [code]. */
+    private fun progress(code: ProbeCode): Int = when (code) {
+        ProbeCode.DNS_FAIL -> 0
+        ProbeCode.TCP_TIMEOUT, ProbeCode.TCP_RESET -> 1
+        ProbeCode.TLS_FAIL -> 2
+        ProbeCode.CERT_INVALID, ProbeCode.CERT_RU_CA -> 3
+        ProbeCode.HTTP_ERROR -> 4
+        ProbeCode.STALLED -> 5
+        ProbeCode.OK, ProbeCode.OK_UNVERIFIED, ProbeCode.CONTENT_MISMATCH, ProbeCode.SKIPPED -> 6
     }
 
     /**

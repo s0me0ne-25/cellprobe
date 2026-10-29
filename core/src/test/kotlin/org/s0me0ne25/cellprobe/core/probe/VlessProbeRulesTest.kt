@@ -102,6 +102,20 @@ class VlessProbeRulesTest {
         assertEquals(ProbeCode.OK, failure(ProbePhase.BODY, SocketTimeoutException(), VlessProbeRules.TARGET_BYTES))
     }
 
+    @Test
+    fun `decisive failure before the handshake is the most informative attempt`() {
+        val cert = ProbeFailure(ProbePhase.TLS, SSLPeerUnverifiedException("self-signed"))
+        val refused = ProbeFailure(ProbePhase.CONNECT, SocketException("Connection refused"))
+        assertEquals(cert, VlessProbeRules.decisiveFailure(listOf(cert, refused)))
+    }
+
+    @Test
+    fun `decisive failure after the handshake is the call's own`() {
+        val refused = ProbeFailure(ProbePhase.CONNECT, SocketException("Connection refused"))
+        val stalled = ProbeFailure(ProbePhase.BODY, SocketTimeoutException("timeout"))
+        assertEquals(stalled, VlessProbeRules.decisiveFailure(listOf(refused, stalled)))
+    }
+
     private fun failure(phase: ProbePhase, error: Throwable, receivedBytes: Long = 5_000) =
         VlessProbeRules.failureCode(phase, error, receivedBytes)
 }

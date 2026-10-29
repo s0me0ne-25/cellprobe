@@ -85,4 +85,26 @@ class ProbeErrorClassifierTest {
         assertEquals(400, description.length)
         assertEquals('…', description.last())
     }
+
+    @Test
+    fun `certificate failure on one address wins over a refused second address`() {
+        val cert = ProbeFailure(ProbePhase.TLS, SSLHandshakeException("PKIX").apply { initCause(CertificateException("untrusted")) })
+        val refused = ProbeFailure(ProbePhase.CONNECT, ConnectException("Connection refused"))
+
+        assertEquals(cert, ProbeErrorClassifier.mostInformative(listOf(cert, refused)))
+        assertEquals(cert, ProbeErrorClassifier.mostInformative(listOf(refused, cert)))
+    }
+
+    @Test
+    fun `the attempt that got furthest wins, the latest among equals`() {
+        val dns = ProbeFailure(ProbePhase.DNS, UnknownHostException("x"))
+        val timeout = ProbeFailure(ProbePhase.CONNECT, SocketTimeoutException("connect timed out"))
+        val reset = ProbeFailure(ProbePhase.CONNECT, SocketException("Connection reset"))
+        val tls = ProbeFailure(ProbePhase.TLS, SSLHandshakeException("reset"))
+
+        assertEquals(tls, ProbeErrorClassifier.mostInformative(listOf(timeout, tls, reset)))
+        assertEquals(reset, ProbeErrorClassifier.mostInformative(listOf(timeout, reset)))
+        assertEquals(timeout, ProbeErrorClassifier.mostInformative(listOf(reset, timeout)))
+        assertEquals(dns, ProbeErrorClassifier.mostInformative(listOf(dns)))
+    }
 }

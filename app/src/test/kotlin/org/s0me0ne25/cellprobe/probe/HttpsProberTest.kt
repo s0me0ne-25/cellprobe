@@ -24,6 +24,7 @@ import org.s0me0ne25.cellprobe.core.probe.ProbeCode
 import org.s0me0ne25.cellprobe.core.probe.ProbeOutcome
 import org.s0me0ne25.cellprobe.core.probe.WebViewHeaders
 import org.s0me0ne25.cellprobe.core.resources.ResourceEntry
+import java.net.InetAddress
 import java.net.ServerSocket
 import java.net.UnknownHostException
 import java.util.zip.Deflater
@@ -168,6 +169,20 @@ class HttpsProberTest {
         val otherRoot = HeldCertificate.Builder().certificateAuthority(0).commonName("Other Root").build()
 
         assertEquals(ProbeCode.CERT_INVALID, probe(entry(), tls = clientTrusting(otherRoot)).code)
+    }
+
+    @Test
+    fun `certificate failure is reported even if another address of the host fails later`() {
+        server.enqueue(MockResponse.Builder().body("x").build())
+        val otherRoot = HeldCertificate.Builder().certificateAuthority(0).commonName("Other Root").build()
+        // The server listens on one loopback address only; the other refuses.
+        val serverAddress = InetAddress.getByName(server.hostName)
+        val refusing = InetAddress.getByName(if (serverAddress.address.size == 4) "127.0.0.2" else "::2")
+
+        for (addresses in listOf(listOf(serverAddress, refusing), listOf(refusing, serverAddress))) {
+            val outcome = probe(entry(), tls = clientTrusting(otherRoot), dns = { addresses })
+            assertEquals(ProbeCode.CERT_INVALID, outcome.code, "addresses $addresses")
+        }
     }
 
     @Test
