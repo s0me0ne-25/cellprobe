@@ -25,9 +25,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -43,6 +40,9 @@ import org.s0me0ne25.cellprobe.R
 import org.s0me0ne25.cellprobe.core.probe.ProbeCode
 import org.s0me0ne25.cellprobe.core.probe.ProbeOutcome
 import org.s0me0ne25.cellprobe.ui.components.BackButton
+import org.s0me0ne25.cellprobe.engine.EntryRow
+import org.s0me0ne25.cellprobe.engine.ListSection
+import org.s0me0ne25.cellprobe.ui.textRes
 import org.s0me0ne25.cellprobe.ui.titleRes
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,13 +53,11 @@ fun DiagnosticsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    // A new check on every visit, but not on configuration changes.
-    var started by rememberSaveable { mutableStateOf(false) }
+    // The screen shows the check shared with the main screen; it starts one
+    // only if there has been none yet.
     LaunchedEffect(Unit) {
-        if (!started) {
-            started = true
-            viewModel.start()
-        }
+        val current = viewModel.state.value
+        if (!current.running && current.result == null) viewModel.start()
     }
 
     Scaffold(
@@ -94,6 +92,22 @@ fun DiagnosticsScreen(
                         text = stringResource(R.string.diagnostics_failed),
                         color = MaterialTheme.colorScheme.error,
                     )
+                }
+            }
+            val result = state.result
+            if (!state.running && result != null && !result.probed) {
+                item {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = stringResource(result.status.textRes()),
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Text(
+                            text = stringResource(R.string.diagnostics_not_probed),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
             items(state.sections, key = { it.id }) { section -> SectionCard(section) }

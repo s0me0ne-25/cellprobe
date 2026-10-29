@@ -9,10 +9,12 @@ import androidx.datastore.dataStoreFile
 import org.s0me0ne25.cellprobe.data.AppSettings
 import org.s0me0ne25.cellprobe.data.AppSettingsSerializer
 import org.s0me0ne25.cellprobe.data.SettingsRepository
+import org.s0me0ne25.cellprobe.engine.CheckController
 import org.s0me0ne25.cellprobe.engine.ManualCheckRunner
 import org.s0me0ne25.cellprobe.probe.ProbeClientFactory
 import org.s0me0ne25.cellprobe.probe.TlsSetup
 import org.s0me0ne25.cellprobe.probe.UserAgentProvider
+import org.s0me0ne25.cellprobe.system.NetworkStateReader
 
 /**
  * Manual dependency container, one per process.
@@ -39,7 +41,14 @@ class AppContainer(context: Context) {
 
     val probeClientFactory: ProbeClientFactory by lazy { ProbeClientFactory(tls = { tlsSetup }) }
 
-    val manualCheckRunner: ManualCheckRunner by lazy { ManualCheckRunner(probeClientFactory, userAgentProvider) }
+    private val manualCheckRunner: ManualCheckRunner by lazy { ManualCheckRunner(probeClientFactory, userAgentProvider) }
+
+    private val networkStateReader: NetworkStateReader by lazy { NetworkStateReader(appContext) }
+
+    /** The check shared by all screens of the process. */
+    val checkController: CheckController by lazy {
+        CheckController(settingsRepository, networkStateReader, manualCheckRunner)
+    }
 
     private companion object {
         const val SETTINGS_FILE = "settings.json"

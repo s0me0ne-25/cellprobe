@@ -1,6 +1,6 @@
 # Cellprobe — глоссарий
 
-Версия: 0.2 · 2026-10-29
+Версия: 0.3 · 2026-10-29
 
 Обязателен для текстов интерфейса (русских и английских), README, ТЗ, плана, описаний в каталогах приложений и коммит-сообщений.
 
@@ -41,6 +41,8 @@
 | Подстрока для проверки содержимого | маркер | marker | |
 | Встроенный набор записей списка | пресет | preset | |
 | Ручная проверка | «Проверить сейчас», «Проверка ресурсов» | "Check now", "Resource check" | |
+| Тип сети: сотовая передача данных | мобильная сеть | mobile network | сотовая сеть, мобильный интернет (в названии типа) |
+| Тип сети: беспроводная | Wi-Fi | Wi-Fi | вайфай, WiFi |
 
 ### Названия списков
 
@@ -51,3 +53,21 @@
 | 3 | VLESS-входы | VLESS inbounds |
 | 4 | Заведомо заблокированные | Known blocked |
 | ЛК | Личные кабинеты провайдеров | Provider account pages |
+
+### Статусы сети
+
+Тексты статусов на главном экране и в уведомлениях (ТЗ §4).
+
+| Статус | RU | EN |
+|---|---|---|
+| `NORMAL` | Штатный режим сети, рекомендуется VLESS | Network operating normally, VLESS recommended |
+| `NORMAL_NO_VLESS` | Штатный режим, VLESS не настроен | Network operating normally, VLESS not set up |
+| `VLESS_BLOCKED` | Все VLESS-входы заблокированы, смените сервер или используйте I2P | All VLESS inbounds are blocked: switch servers or use I2P |
+| `WHITELIST` | Сеть в режиме белого списка, используйте olcRTC | Network in whitelist mode: use olcRTC |
+| `PAY` | Оплатите связь | Pay for your connection |
+| `AUTH_REQUIRED` | Требуется авторизация в сети | Network sign-in required |
+| `NO_INTERNET` | Фактическое подключение к интернету отсутствует | No actual internet connection |
+| `NO_SIGNAL` | Нет сигнала мобильной сети | No mobile network signal |
+| `VOICE_ONLY` | Только голосовая связь, мобильный интернет не подключается | Voice only: mobile data does not connect |
+| `LEAK` | Прокси на внешней сети, или Cellprobe не добавлен в исключения VPN-клиента | Proxy on the network, or Cellprobe is not excluded from the VPN client |
+| `USER_OFFLINE` | Связь отключена: авиарежим или мобильные данные выключены | Offline: airplane mode or mobile data is off |

@@ -60,7 +60,7 @@ fun CellprobeRoot() {
 
     when (val screen = backStack.last()) {
         Screen.Main -> MainScreen(
-            onCheckNow = { backStack.add(Screen.Diagnostics) },
+            onOpenDetails = { backStack.add(Screen.Diagnostics) },
             onOpenSettings = { backStack.add(Screen.Settings) },
         )
         Screen.Settings -> SettingsScreen(

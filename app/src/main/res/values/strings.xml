@@ -11,7 +11,29 @@
 
     <!-- Main screen -->
     <string name="main_status_title">Network status</string>
-    <string name="main_status_placeholder">The network status will appear here once the classifier is ready. For now you can check the resources manually.</string>
+    <string name="main_status_placeholder">No check yet. Tap “Check now”.</string>
+    <string name="main_status_checking">Checking…</string>
+    <string name="main_status_details">%1$s · checked at %2$s</string>
+
+    <!-- Network statuses (spec §4) -->
+    <string name="status_normal">Network operating normally, VLESS recommended</string>
+    <string name="status_normal_no_vless">Network operating normally, VLESS not set up</string>
+    <string name="status_vless_blocked">All VLESS inbounds are blocked: switch servers or use I2P</string>
+    <string name="status_whitelist">Network in whitelist mode: use olcRTC</string>
+    <string name="status_pay">Pay for your connection</string>
+    <string name="status_auth_required">Network sign-in required</string>
+    <string name="status_no_internet">No actual internet connection</string>
+    <string name="status_no_signal">No mobile network signal</string>
+    <string name="status_voice_only">Voice only: mobile data does not connect</string>
+    <string name="status_leak">Proxy on the network, or Cellprobe is not excluded from the VPN client</string>
+    <string name="status_user_offline">Offline: airplane mode or mobile data is off</string>
+
+    <!-- Network types -->
+    <string name="network_type_wifi">Wi-Fi</string>
+    <string name="network_type_mobile">Mobile network</string>
+    <string name="network_type_ethernet">Ethernet</string>
+    <string name="network_type_other">Other network</string>
+    <string name="network_type_none">No network</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
@@ -92,6 +114,7 @@
     <string name="diagnostics_title">Resource check</string>
     <string name="diagnostics_repeat">Repeat</string>
     <string name="diagnostics_failed">The check could not start.</string>
+    <string name="diagnostics_not_probed">Resources were not checked: the status follows from the system state.</string>
     <string name="diagnostics_verdict_checking">checking…</string>
     <string name="diagnostics_verdict_retrying">rechecking…</string>
     <string name="diagnostics_verdict_available">available</string>
