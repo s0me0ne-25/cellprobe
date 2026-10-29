@@ -11,6 +11,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.ui.diagnostics.DiagnosticsScreen
+import org.s0me0ne25.cellprobe.ui.journal.JournalScreen
 import org.s0me0ne25.cellprobe.ui.lists.ResourceListEditorScreen
 import org.s0me0ne25.cellprobe.ui.main.MainScreen
 import org.s0me0ne25.cellprobe.ui.settings.SettingsScreen
@@ -23,6 +24,7 @@ sealed interface Screen {
     data class ResourceListEditor(val listId: ResourceListId) : Screen
     data object VlessEditor : Screen
     data object Diagnostics : Screen
+    data object Journal : Screen
 }
 
 private fun Screen.toRoute(): String = when (this) {
@@ -31,12 +33,14 @@ private fun Screen.toRoute(): String = when (this) {
     is Screen.ResourceListEditor -> "list/${listId.name}"
     Screen.VlessEditor -> "vless"
     Screen.Diagnostics -> "check"
+    Screen.Journal -> "journal"
 }
 
 private fun screenFromRoute(route: String): Screen = when {
     route == "settings" -> Screen.Settings
     route == "vless" -> Screen.VlessEditor
     route == "check" -> Screen.Diagnostics
+    route == "journal" -> Screen.Journal
     route.startsWith("list/") ->
         ResourceListId.entries.firstOrNull { it.name == route.removePrefix("list/") }
             ?.let { Screen.ResourceListEditor(it) }
@@ -61,6 +65,7 @@ fun CellprobeRoot() {
     when (val screen = backStack.last()) {
         Screen.Main -> MainScreen(
             onOpenDetails = { backStack.add(Screen.Diagnostics) },
+            onOpenJournal = { backStack.add(Screen.Journal) },
             onOpenSettings = { backStack.add(Screen.Settings) },
         )
         Screen.Settings -> SettingsScreen(
@@ -74,5 +79,6 @@ fun CellprobeRoot() {
         )
         Screen.VlessEditor -> VlessEditorScreen(onBack = navigateBack)
         Screen.Diagnostics -> DiagnosticsScreen(onBack = navigateBack)
+        Screen.Journal -> JournalScreen(onBack = navigateBack)
     }
 }

@@ -16,13 +16,22 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.s0me0ne25.cellprobe.core.ListAvailability
 import org.s0me0ne25.cellprobe.core.NetworkClassifier
+import org.s0me0ne25.cellprobe.core.NetworkState
 import org.s0me0ne25.cellprobe.core.NetworkStatus
 import org.s0me0ne25.cellprobe.core.NetworkType
+import org.s0me0ne25.cellprobe.core.journal.JournalEntry
+import org.s0me0ne25.cellprobe.core.journal.JournalList
+import org.s0me0ne25.cellprobe.core.journal.JournalProbe
 import org.s0me0ne25.cellprobe.core.probe.CheckListId
 import org.s0me0ne25.cellprobe.core.probe.ListProbeListener
 import org.s0me0ne25.cellprobe.core.probe.ProbeOutcome
+import org.s0me0ne25.cellprobe.data.JournalStore
 import org.s0me0ne25.cellprobe.data.SettingsRepository
+import org.s0me0ne25.cellprobe.data.TrafficStore
+import org.s0me0ne25.cellprobe.system.AppTraffic
 import org.s0me0ne25.cellprobe.system.NetworkStateReader
+import java.io.IOException
+import java.time.LocalDate
 
 /** One entry of a list; [outcome] is null while it is being probed. */
 data class EntryRow(val name: String, val outcome: ProbeOutcome?)
@@ -65,6 +74,8 @@ class CheckController(
     private val settings: SettingsRepository,
     private val networkStateReader: NetworkStateReader,
     private val runner: ManualCheckRunner,
+    private val journal: JournalStore,
+    private val traffic: TrafficStore,
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -82,9 +93,10 @@ class CheckController(
     private suspend fun runCheck() {
         mutableState.update { it.copy(running = true, sections = emptyList(), failed = false) }
         try {
+            val trafficBefore = AppTraffic.totalBytes()
             val networkState = withContext(Dispatchers.IO) { networkStateReader.read() }
             if (!NetworkClassifier.needsProbes(networkState)) {
-                finish(NetworkClassifier.classify(networkState, null), networkState.activeNetwork, probed = false)
+                finish(NetworkClassifier.classify(networkState, null), networkState, probed = false, trafficBefore)
                 return
             }
 
@@ -104,7 +116,7 @@ class CheckController(
             val results = runner.run(lists, vlessEntries, progressListener)
             results.forEach { result -> updateSection(result.listId) { it.copy(available = result.available) } }
             val status = NetworkClassifier.classify(networkState, ListAvailability.of(results))
-            finish(status, networkState.activeNetwork, probed = true)
+            finish(status, networkState, probed = true, trafficBefore)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
@@ -114,10 +126,46 @@ class CheckController(
         }
     }
 
-    private fun finish(status: NetworkStatus, networkType: NetworkType?, probed: Boolean) {
-        val result = CheckResult(status, networkType, clock(), probed)
+    private suspend fun finish(status: NetworkStatus, networkState: NetworkState, probed: Boolean, trafficBefore: Long?) {
+        val result = CheckResult(status, networkState.activeNetwork, clock(), probed)
+        val sections = mutableState.value.sections
         mutableState.update { it.copy(result = result) }
+
+        // A reboot resets the system counters: a negative delta is dropped.
+        val trafficBytes = trafficBefore?.let { before -> AppTraffic.totalBytes()?.minus(before)?.takeIf { it >= 0 } }
+        try {
+            if (trafficBytes != null) traffic.add(trafficBytes, LocalDate.now())
+            journal.append(journalEntry(result, trafficBytes, sections))
+        } catch (_: IOException) {
+            // The check itself succeeded; a full disk must not turn it into a failure.
+        }
     }
+
+    private fun journalEntry(result: CheckResult, trafficBytes: Long?, sections: List<ListSection>) = JournalEntry(
+        timeMillis = result.finishedAtMillis,
+        status = result.status,
+        networkType = result.networkType,
+        trafficBytes = trafficBytes,
+        lists = sections.map { section ->
+            JournalList(
+                id = section.id,
+                available = section.available == true,
+                retried = section.round > 1,
+                probes = section.rows.mapNotNull { row ->
+                    row.outcome?.let { outcome ->
+                        JournalProbe(
+                            name = row.name,
+                            code = outcome.code,
+                            millis = outcome.durationMillis,
+                            httpStatus = outcome.httpStatus,
+                            receivedBytes = outcome.receivedBytes,
+                            error = outcome.errorDetail,
+                        )
+                    }
+                },
+            )
+        },
+    )
 
     private val progressListener = object : ListProbeListener {
         override fun onRoundStarted(listId: CheckListId, round: Int) {

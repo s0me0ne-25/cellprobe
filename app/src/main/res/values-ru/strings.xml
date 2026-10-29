@@ -12,6 +12,16 @@
     <string name="main_status_placeholder">Проверок ещё не было. Нажмите «Проверить сейчас».</string>
     <string name="main_status_checking">Проверяется…</string>
     <string name="main_status_details">%1$s · проверено в %2$s</string>
+    <string name="main_traffic">Трафик проверок: сегодня %1$s, за месяц %2$s</string>
+    <string name="main_cert_ru_ca">Отвечают с сертификатом Минцифры: %1$s. Такие записи считаются недоступными.</string>
+
+    <!-- Journal -->
+    <string name="journal_title">Журнал</string>
+    <string name="journal_empty">Записей пока нет.</string>
+    <string name="journal_clear">Очистить</string>
+    <string name="journal_clear_confirm_title">Очистить журнал?</string>
+    <string name="journal_clear_confirm_text">Все записи будут удалены.</string>
+    <string name="journal_not_probed">ресурсы не проверялись</string>
 
     <!-- Network statuses (spec §4) -->
     <string name="status_normal">Стандартные блокировки</string>

@@ -14,6 +14,16 @@
     <string name="main_status_placeholder">No check yet. Tap “Check now”.</string>
     <string name="main_status_checking">Checking…</string>
     <string name="main_status_details">%1$s · checked at %2$s</string>
+    <string name="main_traffic">Check traffic: %1$s today, %2$s this month</string>
+    <string name="main_cert_ru_ca">Answer with a Russian state certificate: %1$s. Such entries count as unreachable.</string>
+
+    <!-- Journal -->
+    <string name="journal_title">Log</string>
+    <string name="journal_empty">No checks yet.</string>
+    <string name="journal_clear">Clear</string>
+    <string name="journal_clear_confirm_title">Clear the log?</string>
+    <string name="journal_clear_confirm_text">All entries will be deleted.</string>
+    <string name="journal_not_probed">resources not checked</string>
 
     <!-- Network statuses (spec §4) -->
     <string name="status_normal">Standard blocking</string>
