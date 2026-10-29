@@ -20,6 +20,10 @@ jobs:
       - name: Check out
         uses: actions/checkout@v7
 
+      # Commits made on Windows may lose the executable bit of the wrapper.
+      - name: Make the Gradle wrapper executable
+        run: chmod +x gradlew
+
       - name: Set up JDK
         uses: actions/setup-java@v6
         with:
