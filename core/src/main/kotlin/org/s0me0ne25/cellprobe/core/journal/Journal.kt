@@ -7,6 +7,7 @@ import org.s0me0ne25.cellprobe.core.NetworkStatus
 import org.s0me0ne25.cellprobe.core.NetworkType
 import org.s0me0ne25.cellprobe.core.probe.CheckListId
 import org.s0me0ne25.cellprobe.core.probe.ProbeCode
+import kotlin.time.Duration
 
 /**
  * One finished check in the local journal (spec §9.4).
@@ -69,4 +70,15 @@ object JournalBuffer {
         if (entries.size <= capacity) entries else entries.subList(entries.size - capacity, entries.size)
 
     fun needsCompaction(storedLines: Int): Boolean = storedLines >= COMPACT_AT
+
+    /**
+     * The newest of [entries] (oldest first) if it was made at most [maxAge]
+     * before [nowMillis]; null if there is none or it is older. An entry
+     * from the future (the clock was set back) does not count as recent.
+     */
+    fun latestWithin(entries: List<JournalEntry>, nowMillis: Long, maxAge: Duration): JournalEntry? {
+        val latest = entries.lastOrNull() ?: return null
+        val age = nowMillis - latest.timeMillis
+        return latest.takeIf { age in 0..maxAge.inWholeMilliseconds }
+    }
 }

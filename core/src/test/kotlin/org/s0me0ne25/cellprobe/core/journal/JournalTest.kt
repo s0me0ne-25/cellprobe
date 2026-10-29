@@ -11,6 +11,7 @@ import org.s0me0ne25.cellprobe.core.NetworkStatus
 import org.s0me0ne25.cellprobe.core.NetworkType
 import org.s0me0ne25.cellprobe.core.probe.CheckListId
 import org.s0me0ne25.cellprobe.core.probe.ProbeCode
+import kotlin.time.Duration.Companion.minutes
 
 class JournalTest {
 
@@ -71,5 +72,17 @@ class JournalTest {
 
         val future = json.decodeFromString(JournalEntry.serializer(), """{"timeMillis":1,"status":"LEAK","newField":42}""")
         assertEquals(NetworkStatus.LEAK, future.status)
+    }
+
+    @Test
+    fun `latest entry is restored only if it is recent`() {
+        val entries = listOf(JournalEntry(1_000, NetworkStatus.WHITELIST), JournalEntry(600_000, NetworkStatus.NORMAL))
+        val maxAge = 20.minutes
+
+        assertEquals(entries.last(), JournalBuffer.latestWithin(entries, 600_000 + maxAge.inWholeMilliseconds, maxAge))
+        assertEquals(null, JournalBuffer.latestWithin(entries, 600_001 + maxAge.inWholeMilliseconds, maxAge))
+        assertEquals(entries.last(), JournalBuffer.latestWithin(entries, 600_000, maxAge))
+        assertEquals(null, JournalBuffer.latestWithin(entries, 599_999, maxAge), "entry from the future")
+        assertEquals(null, JournalBuffer.latestWithin(emptyList(), 600_000, maxAge))
     }
 }

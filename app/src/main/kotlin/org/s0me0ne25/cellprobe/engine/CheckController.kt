@@ -21,6 +21,7 @@ import org.s0me0ne25.cellprobe.core.NetworkClassifier
 import org.s0me0ne25.cellprobe.core.NetworkState
 import org.s0me0ne25.cellprobe.core.NetworkStatus
 import org.s0me0ne25.cellprobe.core.NetworkType
+import org.s0me0ne25.cellprobe.core.journal.JournalBuffer
 import org.s0me0ne25.cellprobe.core.journal.JournalEntry
 import org.s0me0ne25.cellprobe.core.journal.JournalList
 import org.s0me0ne25.cellprobe.core.journal.JournalProbe
@@ -34,6 +35,7 @@ import org.s0me0ne25.cellprobe.system.AppTraffic
 import org.s0me0ne25.cellprobe.system.NetworkStateReader
 import java.io.IOException
 import java.time.LocalDate
+import kotlin.time.Duration.Companion.minutes
 
 /** One entry of a list; [outcome] is null while it is being probed. */
 data class EntryRow(val name: String, val outcome: ProbeOutcome?)
@@ -45,6 +47,25 @@ data class ListSection(
     val round: Int,
     /** Null until the list is finished. */
     val available: Boolean?,
+)
+
+/** A list of a journal entry, in the form the screens show. */
+fun JournalList.toSection() = ListSection(
+    id = id,
+    rows = probes.map { probe ->
+        EntryRow(
+            name = probe.name,
+            outcome = ProbeOutcome(
+                code = probe.code,
+                durationMillis = probe.millis,
+                httpStatus = probe.httpStatus,
+                receivedBytes = probe.receivedBytes,
+                errorDetail = probe.error,
+            ),
+        )
+    },
+    round = if (retried) 2 else 1,
+    available = available,
 )
 
 /** Outcome of a finished check. */
@@ -90,10 +111,37 @@ class CheckController(
 
     private var job: Job? = null
 
+    init {
+        scope.launch { restoreLastCheck() }
+    }
+
     /** Starts a check unless one is already running. */
     fun start() {
         if (job?.isActive == true) return
         job = scope.launch { runCheck() }
+    }
+
+    /**
+     * After a restart of the process, shows the last check from the journal
+     * if it is recent; otherwise the screens say there were no checks.
+     */
+    private suspend fun restoreLastCheck() {
+        val entry = try {
+            JournalBuffer.latestWithin(journal.entries.first(), clock(), RESTORE_MAX_AGE)
+        } catch (_: IOException) {
+            null
+        } ?: return
+        val restored = CheckResult(
+            status = entry.status,
+            networkType = entry.networkType,
+            finishedAtMillis = entry.timeMillis,
+            probed = entry.lists.isNotEmpty(),
+            interrupted = entry.interrupted,
+        )
+        // A check started meanwhile has newer data.
+        mutableState.update { state ->
+            if (state.running || state.result != null) state else state.copy(result = restored, sections = entry.lists.map { it.toSection() })
+        }
     }
 
     private suspend fun runCheck() {
@@ -219,5 +267,14 @@ class CheckController(
         mutableState.update { state ->
             state.copy(sections = state.sections.map { if (it.id == id) transform(it) else it })
         }
+    }
+
+    private companion object {
+        /**
+         * A journal entry this recent is shown after a restart: twice the
+         * longest check interval of the spec (10 min with the screen off).
+         */
+        // TODO: take twice the longest check interval from the settings once intervals are configurable (step 8).
+        val RESTORE_MAX_AGE = 20.minutes
     }
 }

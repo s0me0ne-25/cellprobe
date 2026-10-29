@@ -39,10 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.s0me0ne25.cellprobe.R
 import org.s0me0ne25.cellprobe.core.journal.JournalEntry
-import org.s0me0ne25.cellprobe.core.journal.JournalList
-import org.s0me0ne25.cellprobe.core.probe.ProbeOutcome
-import org.s0me0ne25.cellprobe.engine.EntryRow
-import org.s0me0ne25.cellprobe.engine.ListSection
+import org.s0me0ne25.cellprobe.engine.toSection
 import org.s0me0ne25.cellprobe.ui.components.BackButton
 import org.s0me0ne25.cellprobe.ui.components.ListSectionCard
 import org.s0me0ne25.cellprobe.ui.labelRes
@@ -198,21 +195,3 @@ private fun entryTime(millis: Long): String {
     val date = Date(millis)
     return "${DateFormat.getMediumDateFormat(context).format(date)} ${DateFormat.getTimeFormat(context).format(date)}"
 }
-
-private fun JournalList.toSection() = ListSection(
-    id = id,
-    rows = probes.map { probe ->
-        EntryRow(
-            name = probe.name,
-            outcome = ProbeOutcome(
-                code = probe.code,
-                durationMillis = probe.millis,
-                httpStatus = probe.httpStatus,
-                receivedBytes = probe.receivedBytes,
-                errorDetail = probe.error,
-            ),
-        )
-    },
-    round = if (retried) 2 else 1,
-    available = available,
-)

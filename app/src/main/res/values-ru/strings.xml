@@ -9,7 +9,7 @@
 
     <!-- Main screen -->
     <string name="main_status_title">Состояние сети</string>
-    <string name="main_status_placeholder">Проверок ещё не было. Нажмите «Проверить сейчас».</string>
+    <string name="main_status_placeholder">Проверок не было. Нажмите «Проверить сейчас».</string>
     <string name="main_status_checking">Проверяется…</string>
     <string name="main_status_details">%1$s · проверено в %2$s</string>
     <string name="main_traffic">Трафик проверок: сегодня %1$s, за месяц %2$s</string>

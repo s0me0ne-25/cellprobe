@@ -11,7 +11,7 @@
 
     <!-- Main screen -->
     <string name="main_status_title">Network status</string>
-    <string name="main_status_placeholder">No check yet. Tap “Check now”.</string>
+    <string name="main_status_placeholder">No recent checks. Tap “Check now”.</string>
     <string name="main_status_checking">Checking…</string>
     <string name="main_status_details">%1$s · checked at %2$s</string>
     <string name="main_traffic">Check traffic: %1$s today, %2$s this month</string>
