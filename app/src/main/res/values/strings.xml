@@ -25,6 +25,11 @@
     <string name="journal_clear_confirm_text">All entries will be deleted.</string>
     <string name="journal_not_probed">resources not checked</string>
     <string name="journal_interrupted">check interrupted</string>
+    <!-- A range of check times: oldest – newest. -->
+    <string name="journal_time_range">%1$s – %2$s</string>
+    <string name="settings_section_journal">Log</string>
+    <string name="journal_detailed">Detailed log</string>
+    <string name="journal_detailed_description">Every check is a separate entry with the results of each resource. When off, consecutive checks with the same network type and status are merged into one entry.</string>
 
     <!-- Network statuses (spec §4) -->
     <string name="status_normal">Standard blocking</string>

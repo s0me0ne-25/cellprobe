@@ -23,6 +23,10 @@
     <string name="journal_clear_confirm_text">Все записи будут удалены.</string>
     <string name="journal_not_probed">ресурсы не проверялись</string>
     <string name="journal_interrupted">проверка прервана</string>
+    <string name="journal_time_range">%1$s – %2$s</string>
+    <string name="settings_section_journal">Журнал</string>
+    <string name="journal_detailed">Подробный журнал</string>
+    <string name="journal_detailed_description">Каждая проверка — отдельная запись с результатами по каждому ресурсу. Если выключено, подряд идущие проверки с одинаковыми типом сети и статусом объединяются в одну запись.</string>
 
     <!-- Network statuses (spec §4) -->
     <string name="status_normal">Стандартные блокировки</string>

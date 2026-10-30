@@ -26,6 +26,8 @@ data class AppSettings(
     /** Package name of the app assigned to each role. */
     val appRoles: Map<AppRole, String> = emptyMap(),
     val monitoring: MonitoringSettings = MonitoringSettings(),
+    /** The journal shows every check with its results; otherwise runs of equal results are merged. */
+    val detailedJournal: Boolean = false,
 )
 
 object AppSettingsSerializer : Serializer<AppSettings> {

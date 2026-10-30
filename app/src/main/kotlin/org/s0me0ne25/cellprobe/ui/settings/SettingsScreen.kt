@@ -15,12 +15,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -33,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
@@ -76,6 +79,7 @@ data class SettingsUiState(
     val vlessCount: Int,
     val roles: Map<AppRole, RoleApp>,
     val monitoring: MonitoringSettings,
+    val detailedJournal: Boolean,
 )
 
 class SettingsViewModel(
@@ -91,12 +95,14 @@ class SettingsViewModel(
         repository.vlessEntries,
         repository.appRoles,
         repository.monitoring,
-    ) { lists, vless, roles, monitoring ->
+        repository.detailedJournal,
+    ) { lists, vless, roles, monitoring, detailedJournal ->
         SettingsUiState(
             resourceLists = lists.associateBy { it.id },
             vlessCount = vless.size,
             roles = roles.mapValues { (_, packageName) -> RoleApp(packageName, installedApps.label(packageName)) },
             monitoring = monitoring,
+            detailedJournal = detailedJournal,
         )
     }
         .flowOn(Dispatchers.IO)
@@ -108,6 +114,10 @@ class SettingsViewModel(
             repository.updateMonitoring { it.copy(enabled = enabled) }
             syncMonitoring(enabled)
         }
+    }
+
+    fun setDetailedJournal(detailed: Boolean) {
+        viewModelScope.launch { repository.setDetailedJournal(detailed) }
     }
 
     fun setInterval(screenOn: Boolean, interval: Duration) {
@@ -165,6 +175,9 @@ fun SettingsScreen(
                     onEnabledChange = viewModel::setMonitoringEnabled,
                     onIntervalChange = viewModel::setInterval,
                 )
+            }
+            item(key = "journal") {
+                JournalSection(detailed = loaded.detailedJournal, onDetailedChange = viewModel::setDetailedJournal)
             }
             item {
                 Text(
@@ -336,4 +349,24 @@ private fun SettingsListItem(
         modifier = Modifier.clickable(onClick = onClick),
     )
     HorizontalDivider()
+}
+
+/** Display mode of the journal (spec §9.2, §9.4). */
+@Composable
+private fun JournalSection(detailed: Boolean, onDetailedChange: (Boolean) -> Unit) {
+    Column {
+        Text(
+            text = stringResource(R.string.settings_section_journal),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+        )
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.journal_detailed)) },
+            supportingContent = { Text(stringResource(R.string.journal_detailed_description)) },
+            trailingContent = { Switch(checked = detailed, onCheckedChange = null) },
+            modifier = Modifier.toggleable(value = detailed, role = Role.Switch, onValueChange = onDetailedChange),
+        )
+        HorizontalDivider()
+    }
 }

@@ -40,6 +40,15 @@ class SettingsRepository(private val dataStore: DataStore<AppSettings>) {
         dataStore.updateData { it.copy(monitoring = transform(it.monitoring)) }
     }
 
+    /** Display mode of the journal; the journal itself is stored the same way in both. */
+    val detailedJournal: Flow<Boolean> = dataStore.data
+        .map { it.detailedJournal }
+        .distinctUntilChanged()
+
+    suspend fun setDetailedJournal(detailed: Boolean) {
+        dataStore.updateData { it.copy(detailedJournal = detailed) }
+    }
+
     /** Package name of the app assigned to each role. */
     val appRoles: Flow<Map<AppRole, String>> = dataStore.data
         .map { it.appRoles }

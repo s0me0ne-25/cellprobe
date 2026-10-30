@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.s0me0ne25.cellprobe.R
+import org.s0me0ne25.cellprobe.core.journal.JournalBlock
 import org.s0me0ne25.cellprobe.core.journal.JournalEntry
 import org.s0me0ne25.cellprobe.engine.toSection
 import org.s0me0ne25.cellprobe.ui.components.BackButton
@@ -46,6 +47,8 @@ import org.s0me0ne25.cellprobe.ui.labelRes
 import org.s0me0ne25.cellprobe.ui.theme.color
 import org.s0me0ne25.cellprobe.ui.titleRes
 import org.s0me0ne25.cellprobe.ui.tone
+import java.time.Instant
+import java.time.ZoneId
 import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,7 +57,7 @@ fun JournalScreen(
     onBack: () -> Unit,
     viewModel: JournalViewModel = viewModel(factory = JournalViewModel.Factory),
 ) {
-    val entries by viewModel.entries.collectAsStateWithLifecycle()
+    val content by viewModel.content.collectAsStateWithLifecycle()
     var confirmClear by rememberSaveable { mutableStateOf(false) }
     // Expanded entries, by time: stable across new checks at the top.
     var expanded by rememberSaveable { mutableStateOf(emptyList<Long>()) }
@@ -64,7 +67,7 @@ fun JournalScreen(
     // disturbed; a configuration change is not an opening.
     val listState = rememberLazyListState()
     var openedAtTop by rememberSaveable { mutableStateOf(false) }
-    val loaded = entries != null
+    val loaded = content != null
     LaunchedEffect(loaded) {
         if (loaded && !openedAtTop) {
             listState.scrollToItem(0)
@@ -78,7 +81,7 @@ fun JournalScreen(
                 title = { Text(stringResource(R.string.journal_title)) },
                 navigationIcon = { BackButton(onBack) },
                 actions = {
-                    TextButton(onClick = { confirmClear = true }, enabled = !entries.isNullOrEmpty()) {
+                    TextButton(onClick = { confirmClear = true }, enabled = content?.isEmpty == false) {
                         Text(stringResource(R.string.journal_clear))
                     }
                 },
@@ -97,7 +100,7 @@ fun JournalScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            if (entries?.isEmpty() == true) {
+            if (content?.isEmpty == true) {
                 item {
                     Text(
                         text = stringResource(R.string.journal_empty),
@@ -106,15 +109,22 @@ fun JournalScreen(
                     )
                 }
             }
-            items(entries.orEmpty(), key = { it.timeMillis }) { entry ->
-                val isExpanded = entry.timeMillis in expanded
-                JournalEntryCard(
-                    entry = entry,
-                    expanded = isExpanded,
-                    onToggle = {
-                        expanded = if (isExpanded) expanded - entry.timeMillis else expanded + entry.timeMillis
-                    },
-                )
+            when (val shown = content) {
+                null -> Unit
+                is JournalContent.Detailed -> items(shown.entries, key = { it.timeMillis }) { entry ->
+                    val isExpanded = entry.timeMillis in expanded
+                    JournalEntryCard(
+                        entry = entry,
+                        expanded = isExpanded,
+                        onToggle = {
+                            expanded = if (isExpanded) expanded - entry.timeMillis else expanded + entry.timeMillis
+                        },
+                    )
+                }
+                // Keyed by the oldest check: it stays the same while new checks join the block.
+                is JournalContent.Compact -> items(shown.blocks, key = { "block-${it.oldestMillis}" }) { block ->
+                    JournalBlockCard(block)
+                }
             }
         }
     }
@@ -174,6 +184,68 @@ private fun JournalEntryCard(entry: JournalEntry, expanded: Boolean, onToggle: (
             }
         }
     }
+}
+
+/** A run of equal results of the compact journal; it does not expand. */
+@Composable
+private fun JournalBlockCard(block: JournalBlock) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = if (block.withinOneMinute) entryTime(block.newestMillis) else blockTime(block),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                text = stringResource(block.status.titleRes()),
+                style = MaterialTheme.typography.titleMedium,
+                color = block.status.tone().color(),
+            )
+            Text(
+                text = blockDetails(block),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** "Mobile network · 12 MB": the traffic of the whole block. */
+@Composable
+private fun blockDetails(block: JournalBlock): String {
+    val context = LocalContext.current
+    val parts = mutableListOf(stringResource(block.networkType.labelRes()))
+    block.trafficBytes?.let { parts += Formatter.formatShortFileSize(context, it) }
+    return parts.joinToString(" · ")
+}
+
+/**
+ * "30 Oct 2026 12:40 – 13:10" within one day, "29 Oct 2026 23:50 –
+ * 30 Oct 2026 00:20" across days.
+ */
+@Composable
+private fun blockTime(block: JournalBlock): String {
+    val context = LocalContext.current
+    val dateFormat = DateFormat.getMediumDateFormat(context)
+    val timeFormat = DateFormat.getTimeFormat(context)
+    val oldest = Date(block.oldestMillis)
+    val newest = Date(block.newestMillis)
+    val newestText = if (sameDay(block.oldestMillis, block.newestMillis)) {
+        timeFormat.format(newest)
+    } else {
+        "${dateFormat.format(newest)} ${timeFormat.format(newest)}"
+    }
+    return stringResource(R.string.journal_time_range, "${dateFormat.format(oldest)} ${timeFormat.format(oldest)}", newestText)
+}
+
+private fun sameDay(aMillis: Long, bMillis: Long): Boolean {
+    val zone = ZoneId.systemDefault()
+    return Instant.ofEpochMilli(aMillis).atZone(zone).toLocalDate() == Instant.ofEpochMilli(bMillis).atZone(zone).toLocalDate()
 }
 
 /** "Mobile network · 1.2 MB", plus a note if nothing was probed or the check was cut short. */
