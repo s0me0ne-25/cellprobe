@@ -5,6 +5,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Active network, its transport and the captive portal flag; mobile data state on API 26+. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Background monitoring runs as a foreground service with a status notification. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!--
         Apps that can be launched from the home screen: the candidates for the
@@ -42,6 +46,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+            specialUse: periodic network checks for the user, which fit none
+            of the typed foreground service categories; dataSync is limited to
+            6 hours a day on Android 15+ (spec §8).
+        -->
+        <service
+            android:name=".engine.MonitoringService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Continuous monitoring of network filtering: periodic reachability checks of user-chosen resources, with the current status in the notification" />
+        </service>
 
     </application>
 

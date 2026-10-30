@@ -39,6 +39,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -50,11 +51,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import org.s0me0ne25.cellprobe.R
 import org.s0me0ne25.cellprobe.core.actions.AppRole
+import org.s0me0ne25.cellprobe.core.monitoring.MonitoringSettings
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.core.resources.ResourceListState
 import org.s0me0ne25.cellprobe.data.SettingsRepository
+import org.s0me0ne25.cellprobe.engine.MonitoringService
 import org.s0me0ne25.cellprobe.system.InstalledApps
 import org.s0me0ne25.cellprobe.ui.appContainer
 import org.s0me0ne25.cellprobe.ui.apps.AppIcon
@@ -65,35 +69,67 @@ import org.s0me0ne25.cellprobe.ui.descriptionRes
 import org.s0me0ne25.cellprobe.ui.listSummary
 import org.s0me0ne25.cellprobe.ui.main.RoleApp
 import org.s0me0ne25.cellprobe.ui.titleRes
+import kotlin.time.Duration
 
 data class SettingsUiState(
     val resourceLists: Map<ResourceListId, ResourceListState>,
     val vlessCount: Int,
     val roles: Map<AppRole, RoleApp>,
+    val monitoring: MonitoringSettings,
 )
 
-class SettingsViewModel(repository: SettingsRepository, installedApps: InstalledApps) : ViewModel() {
+class SettingsViewModel(
+    private val repository: SettingsRepository,
+    installedApps: InstalledApps,
+    /** Starts or stops the monitoring service. */
+    private val syncMonitoring: (Boolean) -> Unit,
+) : ViewModel() {
 
     /** Null until the settings are loaded. */
     val state: StateFlow<SettingsUiState?> = combine(
         repository.resourceLists,
         repository.vlessEntries,
         repository.appRoles,
-    ) { lists, vless, roles ->
+        repository.monitoring,
+    ) { lists, vless, roles, monitoring ->
         SettingsUiState(
             resourceLists = lists.associateBy { it.id },
             vlessCount = vless.size,
             roles = roles.mapValues { (_, packageName) -> RoleApp(packageName, installedApps.label(packageName)) },
+            monitoring = monitoring,
         )
     }
         .flowOn(Dispatchers.IO)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** Saves the switch first: the service stops itself while it reads "off". */
+    fun setMonitoringEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.updateMonitoring { it.copy(enabled = enabled) }
+            syncMonitoring(enabled)
+        }
+    }
+
+    fun setInterval(screenOn: Boolean, interval: Duration) {
+        viewModelScope.launch {
+            repository.updateMonitoring { monitoring ->
+                if (screenOn) {
+                    monitoring.copy(screenOnIntervalSeconds = interval.inWholeSeconds)
+                } else {
+                    monitoring.copy(screenOffIntervalSeconds = interval.inWholeSeconds)
+                }
+            }
+        }
+    }
+
     companion object {
         val Factory = viewModelFactory {
             initializer {
                 val container = appContainer()
-                SettingsViewModel(container.settingsRepository, container.installedApps)
+                val application = checkNotNull(this[APPLICATION_KEY])
+                SettingsViewModel(container.settingsRepository, container.installedApps) { enabled ->
+                    MonitoringService.sync(application, enabled)
+                }
             }
         }
     }
@@ -122,6 +158,14 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = innerPadding,
         ) {
+            val loaded = state ?: return@LazyColumn
+            item(key = "monitoring") {
+                MonitoringSection(
+                    settings = loaded.monitoring,
+                    onEnabledChange = viewModel::setMonitoringEnabled,
+                    onIntervalChange = viewModel::setInterval,
+                )
+            }
             item {
                 Text(
                     text = stringResource(R.string.settings_section_lists),
@@ -130,7 +174,7 @@ fun SettingsScreen(
                     modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
                 )
             }
-            val current = state ?: return@LazyColumn
+            val current = loaded
 
             // Lists in the order of the spec: 1, 2, VLESS (3), 4, provider pages.
             fun resourceList(id: ResourceListId) {

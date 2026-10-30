@@ -187,4 +187,17 @@
     <string name="action_open_network_settings">Настройки сети</string>
     <string name="main_provider_pages_empty">Личные кабинеты провайдеров не указаны. Добавьте их в настройках.</string>
     <string name="main_launch_failed">Не удалось открыть %1$s. Выберите приложение заново.</string>
+
+    <!-- Monitoring -->
+    <string name="channel_service">Мониторинг</string>
+    <string name="channel_service_description">Постоянное уведомление с текущим состоянием сети, пока включён фоновый мониторинг.</string>
+    <string name="notification_no_checks">Проверок ещё не было</string>
+    <string name="settings_section_monitoring">Мониторинг</string>
+    <string name="monitoring_enabled">Фоновый мониторинг</string>
+    <string name="monitoring_enabled_description">Проверяет сеть сам и показывает состояние в уведомлении.</string>
+    <string name="monitoring_interval_screen_on">Интервал при включённом экране</string>
+    <string name="monitoring_interval_screen_off">Интервал при выключенном экране</string>
+    <string name="monitoring_notifications_denied">Уведомления выключены: мониторинг работает, но его состояние не видно в уведомлении.</string>
+    <string name="interval_seconds">%1$d с</string>
+    <string name="interval_minutes">%1$d мин</string>
 </resources>

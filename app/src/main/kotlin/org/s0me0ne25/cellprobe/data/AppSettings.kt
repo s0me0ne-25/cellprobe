@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.s0me0ne25.cellprobe.core.actions.AppRole
+import org.s0me0ne25.cellprobe.core.monitoring.MonitoringSettings
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.core.resources.StoredResourceList
 import org.s0me0ne25.cellprobe.core.vless.VlessEntry
@@ -24,6 +25,7 @@ data class AppSettings(
     val vlessEntries: List<VlessEntry> = emptyList(),
     /** Package name of the app assigned to each role. */
     val appRoles: Map<AppRole, String> = emptyMap(),
+    val monitoring: MonitoringSettings = MonitoringSettings(),
 )
 
 object AppSettingsSerializer : Serializer<AppSettings> {

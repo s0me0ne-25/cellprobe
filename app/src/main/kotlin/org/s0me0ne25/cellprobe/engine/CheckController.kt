@@ -35,7 +35,6 @@ import org.s0me0ne25.cellprobe.system.AppTraffic
 import org.s0me0ne25.cellprobe.system.NetworkStateReader
 import java.io.IOException
 import java.time.LocalDate
-import kotlin.time.Duration.Companion.minutes
 
 /** One entry of a list; [outcome] is null while it is being probed. */
 data class EntryRow(val name: String, val outcome: ProbeOutcome?)
@@ -115,19 +114,20 @@ class CheckController(
         scope.launch { restoreLastCheck() }
     }
 
-    /** Starts a check unless one is already running. */
-    fun start() {
-        if (job?.isActive == true) return
-        job = scope.launch { runCheck() }
+    /** Starts a check unless one is already running; returns the running check. */
+    fun start(): Job {
+        job?.takeIf { it.isActive }?.let { return it }
+        return scope.launch { runCheck() }.also { job = it }
     }
 
     /**
      * After a restart of the process, shows the last check from the journal
-     * if it is recent; otherwise the screens say there were no checks.
+     * if it is recent (twice the longest check interval); otherwise the
+     * screens say there were no checks.
      */
     private suspend fun restoreLastCheck() {
         val entry = try {
-            JournalBuffer.latestWithin(journal.entries.first(), clock(), RESTORE_MAX_AGE)
+            JournalBuffer.latestWithin(journal.entries.first(), clock(), settings.monitoring.first().lastCheckMaxAge)
         } catch (_: IOException) {
             null
         } ?: return
@@ -269,14 +269,5 @@ class CheckController(
         mutableState.update { state ->
             state.copy(sections = state.sections.map { if (it.id == id) transform(it) else it })
         }
-    }
-
-    private companion object {
-        /**
-         * A journal entry this recent is shown after a restart: twice the
-         * longest check interval of the spec (10 min with the screen off).
-         */
-        // TODO: take twice the longest check interval from the settings once intervals are configurable (step 8).
-        val RESTORE_MAX_AGE = 20.minutes
     }
 }

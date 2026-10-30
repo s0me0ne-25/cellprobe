@@ -187,4 +187,17 @@
     <string name="action_open_network_settings">Network settings</string>
     <string name="main_provider_pages_empty">No provider account pages added. Add them in the settings.</string>
     <string name="main_launch_failed">Cannot open %1$s. Choose the app again.</string>
+
+    <!-- Monitoring -->
+    <string name="channel_service">Monitoring</string>
+    <string name="channel_service_description">Persistent notification with the current network status while background monitoring is on.</string>
+    <string name="notification_no_checks">No checks yet</string>
+    <string name="settings_section_monitoring">Monitoring</string>
+    <string name="monitoring_enabled">Background monitoring</string>
+    <string name="monitoring_enabled_description">Checks the network on its own and shows the status in a notification.</string>
+    <string name="monitoring_interval_screen_on">Interval, screen on</string>
+    <string name="monitoring_interval_screen_off">Interval, screen off</string>
+    <string name="monitoring_notifications_denied">Notifications are off: monitoring works, but its status is not shown in the notification.</string>
+    <string name="interval_seconds">%1$d s</string>
+    <string name="interval_minutes">%1$d min</string>
 </resources>
