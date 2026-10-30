@@ -3,9 +3,12 @@
 package org.s0me0ne25.cellprobe
 
 import android.content.Context
+import android.os.PowerManager
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.dataStoreFile
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import org.s0me0ne25.cellprobe.core.journal.TrafficTotals
 import org.s0me0ne25.cellprobe.data.AppSettings
 import org.s0me0ne25.cellprobe.data.AppSettingsSerializer
@@ -15,10 +18,12 @@ import org.s0me0ne25.cellprobe.data.TrafficStore
 import org.s0me0ne25.cellprobe.data.TrafficTotalsSerializer
 import org.s0me0ne25.cellprobe.engine.CheckController
 import org.s0me0ne25.cellprobe.engine.ManualCheckRunner
+import org.s0me0ne25.cellprobe.engine.MonitoringAlarm
 import org.s0me0ne25.cellprobe.probe.ProbeClientFactory
 import org.s0me0ne25.cellprobe.probe.TlsSetup
 import org.s0me0ne25.cellprobe.probe.UserAgentProvider
 import org.s0me0ne25.cellprobe.system.InstalledApps
+import org.s0me0ne25.cellprobe.system.MonitoringPermissions
 import org.s0me0ne25.cellprobe.system.NetworkStateReader
 import java.io.File
 
@@ -49,7 +54,7 @@ class AppContainer(context: Context) {
 
     private val manualCheckRunner: ManualCheckRunner by lazy { ManualCheckRunner(probeClientFactory, userAgentProvider) }
 
-    private val networkStateReader: NetworkStateReader by lazy { NetworkStateReader(appContext) }
+    val networkStateReader: NetworkStateReader by lazy { NetworkStateReader(appContext) }
 
     val installedApps: InstalledApps by lazy { InstalledApps(appContext) }
 
@@ -69,7 +74,29 @@ class AppContainer(context: Context) {
         CheckController(settingsRepository, networkStateReader, manualCheckRunner, journalStore, trafficStore)
     }
 
+    val monitoringPermissions: MonitoringPermissions by lazy { MonitoringPermissions(appContext) }
+
+    val monitoringAlarm: MonitoringAlarm by lazy { MonitoringAlarm(appContext, monitoringPermissions) }
+
+    /** Wake-up alarms, from [org.s0me0ne25.cellprobe.engine.AlarmReceiver] to the monitoring loop. */
+    val monitoringWakeUps = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+
+    /**
+     * Keeps the CPU awake from a wake-up event (an alarm, a network change)
+     * until the monitoring loop has started the check, which then holds a
+     * wake lock of its own. Not reference-counted: each acquire only moves
+     * the timeout.
+     */
+    val monitoringWakeLock: PowerManager.WakeLock by lazy { newWakeLock(WAKE_LOCK_TAG) }
+
+    /** A partial wake lock that is not reference-counted. */
+    fun newWakeLock(tag: String): PowerManager.WakeLock =
+        checkNotNull(appContext.getSystemService(PowerManager::class.java))
+            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, tag)
+            .apply { setReferenceCounted(false) }
+
     private companion object {
+        const val WAKE_LOCK_TAG = "cellprobe:wakeup"
         const val SETTINGS_FILE = "settings.json"
         const val TRAFFIC_FILE = "traffic.json"
         const val JOURNAL_FILE = "journal.jsonl"

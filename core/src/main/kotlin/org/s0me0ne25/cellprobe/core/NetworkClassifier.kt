@@ -16,12 +16,16 @@ enum class NetworkType { WIFI, MOBILE, ETHERNET, OTHER }
  * @property captivePortal the system flags the active network as a captive portal.
  * @property airplaneMode airplane mode is on.
  * @property mobileDataEnabled mobile data is switched on for the data SIM.
+ * @property networkId opaque number of the active network connection,
+ *   new on every (re)connection; tells a network change from a
+ *   capabilities update. Kept in memory only.
  */
 data class NetworkState(
     val activeNetwork: NetworkType?,
     val captivePortal: Boolean = false,
     val airplaneMode: Boolean = false,
     val mobileDataEnabled: Boolean = true,
+    val networkId: Long? = null,
 )
 
 /**

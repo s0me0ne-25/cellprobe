@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Active network, its transport and the captive portal flag; mobile data state on API 26+. -->
@@ -9,6 +10,19 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Monitoring comes back after a reboot. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- The CPU stays awake from a wake-up alarm to the end of the check. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Checks on time while the device sleeps (API 31+); the user grants it, inexact alarms otherwise. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!--
+        A direct request for the battery optimization exemption. Cellprobe is
+        not distributed through Google Play, whose policy limits it (spec §8).
+    -->
+    <uses-permission
+        android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+        tools:ignore="BatteryLife" />
 
     <!--
         Apps that can be launched from the home screen: the candidates for the
@@ -60,6 +74,19 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Continuous monitoring of network filtering: periodic reachability checks of user-chosen resources, with the current status in the notification" />
         </service>
+
+        <receiver
+            android:name=".engine.AlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name=".engine.StartupReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

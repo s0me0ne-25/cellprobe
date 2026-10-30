@@ -6,6 +6,8 @@
     <string name="action_delete">Удалить</string>
     <string name="action_reset">Сбросить</string>
     <string name="action_save">Сохранить</string>
+    <string name="action_continue">Продолжить</string>
+    <string name="action_skip">Пропустить</string>
 
     <!-- Main screen -->
     <string name="main_status_title">Состояние сети</string>
@@ -197,7 +199,15 @@
     <string name="monitoring_enabled_description">Проверяет сеть сам и показывает состояние в уведомлении.</string>
     <string name="monitoring_interval_screen_on">Интервал при включённом экране</string>
     <string name="monitoring_interval_screen_off">Интервал при выключенном экране</string>
-    <string name="monitoring_notifications_denied">Уведомления выключены: мониторинг работает, но его состояние не видно в уведомлении.</string>
+    <string name="permission_notifications_title">Уведомление о статусе</string>
+    <string name="permission_notifications_explanation">Мониторинг показывает текущий статус сети в постоянном уведомлении. Без этого разрешения проверки всё равно идут, но статус виден только в приложении.</string>
+    <string name="permission_notifications_missing">Уведомления выключены: статус виден только в приложении. Нажмите, чтобы разрешить.</string>
+    <string name="permission_battery_title">Работа в фоне</string>
+    <string name="permission_battery_explanation">Ради экономии батареи Android откладывает и останавливает фоновую работу. Чтобы проверки шли по расписанию, разрешите Cellprobe работать без ограничений: система спросит об этом следующим шагом. Одна проверка — это несколько секунд и немного трафика.</string>
+    <string name="permission_battery_missing">Оптимизация батареи включена: в фоне проверки могут задерживаться или останавливаться. Нажмите, чтобы отключить.</string>
+    <string name="permission_exact_alarms_title">Будильники и напоминания</string>
+    <string name="permission_exact_alarms_explanation">Чтобы будить телефон к очередной проверке точно в срок, Cellprobe нужно разрешение «Будильники и напоминания». Без него система сдвигает проверки на своё усмотрение, и интервалы становятся приблизительными. Сейчас откроется экран настроек: включите переключатель и вернитесь назад.</string>
+    <string name="permission_exact_alarms_missing">Нет разрешения на точные будильники: интервалы приблизительные. Нажмите, чтобы разрешить.</string>
     <string name="interval_seconds">%1$d с</string>
     <string name="interval_minutes">%1$d мин</string>
 </resources>
