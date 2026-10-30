@@ -17,6 +17,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.s0me0ne25.cellprobe.core.NetworkState
+import org.s0me0ne25.cellprobe.core.NetworkType
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -129,5 +131,77 @@ class MonitoringTest {
 
         assertEquals(listOf(0L), starts)
         job.cancelAndJoin()
+    }
+
+    @Test
+    fun `each pause asks for a wake-up at its end and a wake-up ends it`() = runTest {
+        val wakeAt = mutableListOf<Long>()
+        val wakeUps = MutableSharedFlow<Unit>()
+        var now = 0L
+        val starts = mutableListOf<Long>()
+        val job = launch {
+            MonitoringLoop.run(
+                interval = MutableStateFlow(10.minutes),
+                extraChecks = MutableSharedFlow(),
+                nowMillis = { now },
+                check = { starts += now },
+                onPause = { wakeAt += it },
+                wakeUps = wakeUps,
+            )
+        }
+        runCurrent()
+        assertEquals(listOf(600_000L), wakeAt)
+
+        // The device slept: the coroutine timer did not run, the alarm did.
+        now = 600_000
+        wakeUps.emit(Unit)
+        runCurrent()
+
+        assertEquals(listOf(0L, 600_000L), starts)
+        assertEquals(listOf(600_000L, 1_200_000L), wakeAt)
+        job.cancelAndJoin()
+    }
+
+    @Test
+    fun `an early wake-up only reschedules`() = runTest {
+        val wakeAt = mutableListOf<Long>()
+        val wakeUps = MutableSharedFlow<Unit>()
+        var now = 0L
+        val starts = mutableListOf<Long>()
+        val job = launch {
+            MonitoringLoop.run(MutableStateFlow(10.minutes), MutableSharedFlow(), { now }, { wakeAt += it }, wakeUps) { starts += now }
+        }
+        runCurrent()
+        now = 590_000
+        wakeUps.emit(Unit)
+        runCurrent()
+
+        assertEquals(listOf(0L), starts)
+        assertEquals(listOf(600_000L, 600_000L), wakeAt)
+        job.cancelAndJoin()
+    }
+
+    private val mobile = NetworkState(activeNetwork = NetworkType.MOBILE, networkId = 101)
+
+    @Test
+    fun `network change, loss and return call for a check after settling`() {
+        val wifi = NetworkState(activeNetwork = NetworkType.WIFI, networkId = 102)
+        val none = NetworkState(activeNetwork = null)
+        assertEquals(NetworkEvents.SETTLE_DELAY, NetworkEvents.extraCheckDelay(mobile, wifi))
+        assertEquals(NetworkEvents.SETTLE_DELAY, NetworkEvents.extraCheckDelay(mobile, none))
+        assertEquals(NetworkEvents.SETTLE_DELAY, NetworkEvents.extraCheckDelay(none, mobile))
+    }
+
+    @Test
+    fun `cleared captive portal calls for a check at once`() {
+        val portal = mobile.copy(captivePortal = true)
+        assertEquals(Duration.ZERO, NetworkEvents.extraCheckDelay(portal, mobile))
+        assertEquals(NetworkEvents.SETTLE_DELAY, NetworkEvents.extraCheckDelay(mobile, portal))
+    }
+
+    @Test
+    fun `other updates of the same network need no check`() {
+        assertEquals(null, NetworkEvents.extraCheckDelay(mobile, mobile))
+        assertEquals(null, NetworkEvents.extraCheckDelay(mobile, mobile.copy(airplaneMode = true)))
     }
 }

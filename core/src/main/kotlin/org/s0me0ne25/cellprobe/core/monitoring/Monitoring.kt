@@ -7,6 +7,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
@@ -15,6 +16,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
+import org.s0me0ne25.cellprobe.core.NetworkState
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -64,7 +66,12 @@ data class MonitoringSettings(
  * The monitoring cycle: a check, then a pause of the current interval,
  * measured from the end of the check. A new interval (the screen went off)
  * applies to the pause already running; an extra check request (the screen
- * went on) ends the pause at once.
+ * went on, the network changed) ends the pause at once.
+ *
+ * A sleeping device does not run coroutine timers, so the end of each pause
+ * is also handed to [onPause] to set a wake-up alarm at that moment of
+ * [nowMillis]; the alarm comes back through [wakeUps]. The coroutine timer
+ * stays as the fallback while the device is awake.
  */
 object MonitoringLoop {
 
@@ -72,6 +79,8 @@ object MonitoringLoop {
         interval: StateFlow<Duration>,
         extraChecks: Flow<Unit>,
         nowMillis: () -> Long,
+        onPause: (wakeAtMillis: Long) -> Unit = {},
+        wakeUps: Flow<Unit> = emptyFlow(),
         check: suspend () -> Unit,
     ): Unit = coroutineScope {
         val extra = Channel<Unit>(Channel.CONFLATED)
@@ -84,19 +93,42 @@ object MonitoringLoop {
             pause@ while (isActive) {
                 val remaining = interval.value - (nowMillis() - finishedAt).milliseconds
                 if (remaining <= Duration.ZERO) break@pause
+                onPause(finishedAt + interval.value.inWholeMilliseconds)
                 val event = withTimeoutOrNull(remaining) {
                     merge(
                         extra.receiveAsFlow().map { Event.EXTRA_CHECK },
-                        interval.drop(1).map { Event.INTERVAL_CHANGED },
+                        interval.drop(1).map { Event.RECOMPUTE },
+                        // The alarm may come a little early or late: recompute.
+                        wakeUps.map { Event.RECOMPUTE },
                     ).first()
                 }
                 when (event) {
                     null, Event.EXTRA_CHECK -> break@pause
-                    Event.INTERVAL_CHANGED -> continue@pause
+                    Event.RECOMPUTE -> continue@pause
                 }
             }
         }
     }
 
-    private enum class Event { EXTRA_CHECK, INTERVAL_CHANGED }
+    private enum class Event { EXTRA_CHECK, RECOMPUTE }
+}
+
+/**
+ * When a change of the default network calls for an extra check
+ * (spec §3, §8): once the network has settled after a change, a loss or a
+ * return, and at once when a captive portal flag is cleared.
+ */
+object NetworkEvents {
+
+    /** A new network needs a moment: addresses, DNS, VPN reconnecting. */
+    val SETTLE_DELAY: Duration = 5.seconds
+
+    /** The delay before an extra check after [previous] became [current], or null if none is needed. */
+    fun extraCheckDelay(previous: NetworkState, current: NetworkState): Duration? = when {
+        previous.captivePortal && !current.captivePortal && current.networkId == previous.networkId &&
+            current.activeNetwork != null -> Duration.ZERO
+        previous.networkId != current.networkId -> SETTLE_DELAY
+        previous.captivePortal != current.captivePortal -> SETTLE_DELAY
+        else -> null
+    }
 }

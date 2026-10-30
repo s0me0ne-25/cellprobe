@@ -33,8 +33,10 @@ class NetworkStateReader(context: Context) {
         // The default network of this app: the physical network when
         // Cellprobe is excluded from the VPN, the VPN otherwise (its
         // capabilities then also carry the underlying transport).
-        val capabilities = connectivity.activeNetwork?.let(connectivity::getNetworkCapabilities)
+        val network = connectivity.activeNetwork
+        val capabilities = network?.let(connectivity::getNetworkCapabilities)
         return NetworkState(
+            networkId = network?.networkHandle,
             activeNetwork = capabilities?.let(::transportOf),
             captivePortal = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL) == true,
             airplaneMode = Settings.Global.getInt(appContext.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0,

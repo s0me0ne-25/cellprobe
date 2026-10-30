@@ -8,6 +8,8 @@
     <string name="action_delete">Delete</string>
     <string name="action_reset">Reset</string>
     <string name="action_save">Save</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_skip">Skip</string>
 
     <!-- Main screen -->
     <string name="main_status_title">Network status</string>
@@ -202,7 +204,15 @@
     <string name="monitoring_enabled_description">Checks the network on its own and shows the status in a notification.</string>
     <string name="monitoring_interval_screen_on">Interval, screen on</string>
     <string name="monitoring_interval_screen_off">Interval, screen off</string>
-    <string name="monitoring_notifications_denied">Notifications are off: monitoring works, but its status is not shown in the notification.</string>
+    <string name="permission_notifications_title">Status notification</string>
+    <string name="permission_notifications_explanation">Monitoring shows the current network status in a persistent notification. Without this permission the checks still run, but the status is only visible in the app.</string>
+    <string name="permission_notifications_missing">Notifications are off: the status is only visible in the app. Tap to allow.</string>
+    <string name="permission_battery_title">Background work</string>
+    <string name="permission_battery_explanation">To save battery, Android delays and stops background work. For the checks to run on schedule, let Cellprobe run without battery restrictions: the system will ask you next. A check takes a few seconds and a little traffic.</string>
+    <string name="permission_battery_missing">Battery optimization is on: in the background, checks may be delayed or stop. Tap to turn it off.</string>
+    <string name="permission_exact_alarms_title">Alarms &amp; reminders</string>
+    <string name="permission_exact_alarms_explanation">To wake the phone for the next check right on time, Cellprobe needs the “Alarms &amp; reminders” permission. Without it the system shifts the checks as it sees fit and the intervals become approximate. The settings screen opens next: turn the switch on and come back.</string>
+    <string name="permission_exact_alarms_missing">No permission for exact alarms: the intervals are approximate. Tap to allow.</string>
     <string name="interval_seconds">%1$d s</string>
     <string name="interval_minutes">%1$d min</string>
 </resources>
