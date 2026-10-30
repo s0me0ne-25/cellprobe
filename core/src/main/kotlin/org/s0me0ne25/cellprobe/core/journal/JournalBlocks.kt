@@ -12,8 +12,6 @@ import org.s0me0ne25.cellprobe.core.NetworkType
  * @property oldestMillis time of the oldest check of the block.
  * @property newestMillis time of the newest check of the block.
  * @property status status of the newest check.
- * @property trafficBytes traffic of the whole block; null if no check of it
- *   had its traffic reported.
  * @property count number of checks in the block.
  */
 data class JournalBlock(
@@ -21,7 +19,6 @@ data class JournalBlock(
     val newestMillis: Long,
     val status: NetworkStatus,
     val networkType: NetworkType?,
-    val trafficBytes: Long?,
     val count: Int,
 ) {
     /**
@@ -70,13 +67,11 @@ object JournalBlocks {
 
     private fun toBlock(entries: List<JournalEntry>): JournalBlock {
         val newest = entries.maxBy { it.timeMillis }
-        val reported = entries.mapNotNull { it.trafficBytes }
         return JournalBlock(
             oldestMillis = entries.minOf { it.timeMillis },
             newestMillis = newest.timeMillis,
             status = newest.status,
             networkType = newest.networkType,
-            trafficBytes = if (reported.isEmpty()) null else reported.sum(),
             count = entries.size,
         )
     }

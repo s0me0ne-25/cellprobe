@@ -15,8 +15,7 @@ class JournalBlocksTest {
         minute: Long,
         status: NetworkStatus = NetworkStatus.NORMAL,
         type: NetworkType? = NetworkType.MOBILE,
-        traffic: Long? = 100,
-    ) = JournalEntry(timeMillis = minute * 60_000, status = status, networkType = type, trafficBytes = traffic)
+    ) = JournalEntry(timeMillis = minute * 60_000, status = status, networkType = type)
 
     @Test
     fun `consecutive entries with the same type and status merge`() {
@@ -27,7 +26,6 @@ class JournalBlocksTest {
             assertEquals(60_000L, oldestMillis)
             assertEquals(7 * 60_000L, newestMillis)
             assertEquals(3, count)
-            assertEquals(300L, trafficBytes)
         }
     }
 
@@ -77,12 +75,6 @@ class JournalBlocksTest {
         assertEquals(listOf(NetworkStatus.NORMAL_NO_VLESS, NetworkStatus.LEAK), blocks.map { it.status })
         assertEquals(8 * 60_000L, blocks.first().oldestMillis)
         assertEquals(9 * 60_000L, blocks.first().newestMillis)
-    }
-
-    @Test
-    fun `traffic sums reported values only`() {
-        assertEquals(150L, JournalBlocks.of(listOf(entry(1, traffic = 150), entry(2, traffic = null))).single().trafficBytes)
-        assertEquals(null, JournalBlocks.of(listOf(entry(1, traffic = null), entry(2, traffic = null))).single().trafficBytes)
     }
 
     @Test

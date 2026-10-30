@@ -8,17 +8,20 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -30,14 +33,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.s0me0ne25.cellprobe.R
+import org.s0me0ne25.cellprobe.core.NetworkType
 import org.s0me0ne25.cellprobe.core.journal.JournalBlock
 import org.s0me0ne25.cellprobe.core.journal.JournalEntry
 import org.s0me0ne25.cellprobe.engine.toSection
@@ -201,27 +208,35 @@ private fun JournalBlockCard(block: JournalBlock) {
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
-                text = stringResource(block.status.titleRes()),
-                style = MaterialTheme.typography.titleMedium,
-                color = block.status.tone().color(),
-            )
-            Text(
-                text = blockDetails(block),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            val statusStyle = MaterialTheme.typography.titleMedium
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                // The network type as an icon as tall as the status line.
+                Icon(
+                    painter = painterResource(block.networkType.iconRes()),
+                    contentDescription = stringResource(block.networkType.labelRes()),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(with(LocalDensity.current) { statusStyle.lineHeight.toDp() }),
+                )
+                Text(
+                    text = stringResource(block.status.titleRes()),
+                    style = statusStyle,
+                    color = block.status.tone().color(),
+                )
+            }
         }
     }
 }
 
-/** "Mobile network · 12 MB": the traffic of the whole block. */
-@Composable
-private fun blockDetails(block: JournalBlock): String {
-    val context = LocalContext.current
-    val parts = mutableListOf(stringResource(block.networkType.labelRes()))
-    block.trafficBytes?.let { parts += Formatter.formatShortFileSize(context, it) }
-    return parts.joinToString(" · ")
+/** Mobile network, Wi-Fi, Ethernet, a globe for another transport, a crossed circle when there is no network. */
+private fun NetworkType?.iconRes(): Int = when (this) {
+    NetworkType.MOBILE -> R.drawable.ic_network_mobile
+    NetworkType.WIFI -> R.drawable.ic_network_wifi
+    NetworkType.ETHERNET -> R.drawable.ic_network_ethernet
+    NetworkType.OTHER -> R.drawable.ic_network_other
+    null -> R.drawable.ic_network_none
 }
 
 /**
