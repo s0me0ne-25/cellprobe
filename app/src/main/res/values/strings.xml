@@ -15,6 +15,8 @@
     <string name="main_status_title">Network status</string>
     <string name="main_status_placeholder">No recent checks. Tap “Check now”.</string>
     <string name="main_status_checking">Checking…</string>
+    <!-- The last check saw another status; a recheck will confirm it or not. -->
+    <string name="main_status_pending">Being confirmed: %1$s</string>
     <string name="main_status_details">%1$s · checked at %2$s</string>
     <string name="main_traffic">Check traffic: %1$s today, %2$s this month</string>
     <string name="main_cert_ru_ca">Answer with a Russian state certificate: %1$s. Such entries count as unreachable.</string>
@@ -199,6 +201,16 @@
     <string name="channel_service">Monitoring</string>
     <string name="channel_service_description">Persistent notification with the current network status while background monitoring is on.</string>
     <string name="notification_no_checks">No checks yet</string>
+    <string name="channel_changes_important">Important changes</string>
+    <string name="channel_changes_important_description">The network status got stricter, or the network became unstable.</string>
+    <string name="channel_changes">Status changes</string>
+    <string name="channel_changes_description">Other changes of the network status, and updates of the notifications above.</string>
+    <string name="notification_unstable_title">Unstable network</string>
+    <string name="notification_unstable_text">Switching between %1$s</string>
+    <string name="quoted">“%1$s”</string>
+    <string name="notification_stabilized_title">Network stabilized: %1$s</string>
+    <!-- Before the last item of a list: "A, B and C". -->
+    <string name="list_last_separator">" and "</string>
     <string name="settings_section_monitoring">Monitoring</string>
     <string name="monitoring_enabled">Background monitoring</string>
     <string name="monitoring_enabled_description">Checks the network on its own and shows the status in a notification.</string>

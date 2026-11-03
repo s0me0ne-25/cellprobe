@@ -53,8 +53,9 @@ import kotlin.time.Duration.Companion.seconds
  *
  * The end of each pause is set as a wake-up alarm ([MonitoringAlarm]), and
  * a partial wake lock is held through the check, so checks go on while the
- * device sleeps. Extra checks start when the screen goes on and when the
- * default network changes ([NetworkEvents]).
+ * device sleeps. Extra checks start when the screen goes on, when the
+ * default network changes ([NetworkEvents]) and when the stabilizer asks
+ * to confirm a new status ([StatusTracker]).
  */
 class MonitoringService : Service() {
 
@@ -95,12 +96,13 @@ class MonitoringService : Service() {
             val interval = combine(settings.monitoring, screenOn) { monitoring, on -> monitoring.interval(on) }
                 .distinctUntilChanged()
                 .stateIn(scope)
-            val networkChecks = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
-            launch { networkExtraChecks(networkChecks) }
+            val requestedChecks = MutableSharedFlow<Unit>(extraBufferCapacity = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+            launch { networkExtraChecks(requestedChecks) }
+            launch { stabilizerRechecks(requestedChecks) }
 
             MonitoringLoop.run(
                 interval = interval,
-                extraChecks = merge(screenOn.drop(1).filter { it }.map { }, networkChecks),
+                extraChecks = merge(screenOn.drop(1).filter { it }.map { }, requestedChecks),
                 nowMillis = SystemClock::elapsedRealtime,
                 onPause = container.monitoringAlarm::set,
                 wakeUps = container.monitoringWakeUps,
@@ -129,13 +131,23 @@ class MonitoringService : Service() {
             .map { (previous, current) -> previous?.let { NetworkEvents.extraCheckDelay(it, current) } }
             .filterNotNull()
             .collectLatest { wait ->
-                if (wait > Duration.ZERO) {
-                    // The device may doze off while the network settles.
-                    container.monitoringWakeLock.acquire((wait + SETTLE_WAKE_LOCK_MARGIN).inWholeMilliseconds)
-                    delay(wait)
-                }
+                if (wait > Duration.ZERO) delayAwake(wait)
                 requests.tryEmit(Unit)
             }
+    }
+
+    /** Runs the rechecks that confirm a new status (spec §6.1); a newer request replaces a waiting one. */
+    private suspend fun stabilizerRechecks(requests: MutableSharedFlow<Unit>) {
+        container.statusTracker.rechecks.collectLatest { wait ->
+            delayAwake(wait)
+            requests.tryEmit(Unit)
+        }
+    }
+
+    /** Waits [wait] while keeping the CPU awake until the loop has started the check that follows. */
+    private suspend fun delayAwake(wait: Duration) {
+        container.monitoringWakeLock.acquire((wait + WAKE_LOCK_MARGIN).inWholeMilliseconds)
+        delay(wait)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
@@ -157,8 +169,8 @@ class MonitoringService : Service() {
         /** A check takes up to about a minute; the wake lock never outlives it by much. */
         private val CHECK_WAKE_LOCK_TIMEOUT = 3.minutes
 
-        /** Time for the loop to start the extra check after the network has settled. */
-        private val SETTLE_WAKE_LOCK_MARGIN = 10.seconds
+        /** Time for the loop to start an extra check after the wait for it. */
+        private val WAKE_LOCK_MARGIN = 10.seconds
 
         /** The service is running in this process. */
         @Volatile

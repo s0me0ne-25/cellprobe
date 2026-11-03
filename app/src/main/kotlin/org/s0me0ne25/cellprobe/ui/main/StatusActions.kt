@@ -25,12 +25,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.s0me0ne25.cellprobe.R
+import org.s0me0ne25.cellprobe.core.NetworkStatus
+import org.s0me0ne25.cellprobe.core.NetworkType
 import org.s0me0ne25.cellprobe.core.actions.AppRole
 import org.s0me0ne25.cellprobe.core.actions.ProviderPageLabels
 import org.s0me0ne25.cellprobe.core.actions.StatusAction
 import org.s0me0ne25.cellprobe.core.actions.StatusActions
 import org.s0me0ne25.cellprobe.core.probe.CheckListId
-import org.s0me0ne25.cellprobe.engine.CheckResult
 import org.s0me0ne25.cellprobe.engine.ListSection
 import org.s0me0ne25.cellprobe.ui.apps.AppIcon
 import org.s0me0ne25.cellprobe.ui.apps.AppPickerDialog
@@ -46,13 +47,14 @@ import org.s0me0ne25.cellprobe.ui.apps.tryStart
  */
 @Composable
 fun StatusActionsSection(
-    result: CheckResult,
+    status: NetworkStatus,
+    networkType: NetworkType?,
     sections: List<ListSection>,
     roles: Map<AppRole, RoleApp>,
     providerPages: List<String>,
     launchIntent: (AppRole) -> Intent?,
 ) {
-    val actions = StatusActions.forStatus(result.status, result.networkType)
+    val actions = StatusActions.forStatus(status, networkType)
     if (actions.isEmpty()) return
 
     val context = LocalContext.current

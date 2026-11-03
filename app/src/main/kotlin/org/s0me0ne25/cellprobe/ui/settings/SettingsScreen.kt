@@ -62,6 +62,7 @@ import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.core.resources.ResourceListState
 import org.s0me0ne25.cellprobe.data.SettingsRepository
 import org.s0me0ne25.cellprobe.engine.MonitoringService
+import org.s0me0ne25.cellprobe.engine.StatusTracker
 import org.s0me0ne25.cellprobe.system.InstalledApps
 import org.s0me0ne25.cellprobe.ui.appContainer
 import org.s0me0ne25.cellprobe.ui.apps.AppIcon
@@ -87,6 +88,7 @@ class SettingsViewModel(
     installedApps: InstalledApps,
     /** Starts or stops the monitoring service. */
     private val syncMonitoring: (Boolean) -> Unit,
+    private val tracker: StatusTracker,
 ) : ViewModel() {
 
     /** Null until the settings are loaded. */
@@ -111,6 +113,8 @@ class SettingsViewModel(
     /** Saves the switch first: the service stops itself while it reads "off". */
     fun setMonitoringEnabled(enabled: Boolean) {
         viewModelScope.launch {
+            // A fresh start: the first check of the new monitoring is the baseline of the stabilizer.
+            if (enabled) tracker.start() else tracker.stop()
             repository.updateMonitoring { it.copy(enabled = enabled) }
             syncMonitoring(enabled)
         }
@@ -137,9 +141,12 @@ class SettingsViewModel(
             initializer {
                 val container = appContainer()
                 val application = checkNotNull(this[APPLICATION_KEY])
-                SettingsViewModel(container.settingsRepository, container.installedApps) { enabled ->
-                    MonitoringService.sync(application, enabled)
-                }
+                SettingsViewModel(
+                    repository = container.settingsRepository,
+                    installedApps = container.installedApps,
+                    syncMonitoring = { enabled -> MonitoringService.sync(application, enabled) },
+                    tracker = container.statusTracker,
+                )
             }
         }
     }

@@ -32,8 +32,8 @@ import org.s0me0ne25.cellprobe.R
 import org.s0me0ne25.cellprobe.core.journal.TrafficTotals
 import org.s0me0ne25.cellprobe.core.probe.CheckListId
 import org.s0me0ne25.cellprobe.core.probe.ProbeCode
-import org.s0me0ne25.cellprobe.engine.CheckResult
 import org.s0me0ne25.cellprobe.engine.CheckState
+import org.s0me0ne25.cellprobe.engine.ShownStatus
 import org.s0me0ne25.cellprobe.ui.components.ListSectionCard
 import org.s0me0ne25.cellprobe.ui.descriptionRes
 import org.s0me0ne25.cellprobe.ui.labelRes
@@ -74,8 +74,8 @@ fun MainScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             StatusCard(state)
-            state.result?.let { result ->
-                StatusActionsSection(result, state.sections, roles, providerPages, viewModel::launchIntent)
+            state.shown?.let { shown ->
+                StatusActionsSection(shown.status, shown.networkType, state.sections, roles, providerPages, viewModel::launchIntent)
             }
             state.sections.firstOrNull { it.id == CheckListId.VLESS && it.rows.isNotEmpty() }?.let { ListSectionCard(it) }
             DiagnosticsCard(state, traffic)
@@ -106,29 +106,36 @@ private fun StatusCard(state: CheckState) {
                 text = stringResource(R.string.main_status_title),
                 style = MaterialTheme.typography.titleMedium,
             )
-            val result = state.result
-            if (result == null) {
+            val shown = state.shown
+            if (shown == null) {
                 Text(
                     text = stringResource(if (state.running) R.string.main_status_checking else R.string.main_status_placeholder),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             } else {
                 Text(
-                    text = stringResource(result.status.titleRes()),
+                    text = stringResource(shown.status.titleRes()),
                     style = MaterialTheme.typography.headlineSmall,
-                    color = result.status.tone().color(),
+                    color = shown.status.tone().color(),
                 )
-                result.status.descriptionRes()?.let { description ->
+                shown.status.descriptionRes()?.let { description ->
                     Text(
                         text = stringResource(description),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
                 Text(
-                    text = resultDetails(result),
+                    text = statusDetails(shown),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                shown.pending?.let { pending ->
+                    Text(
+                        text = stringResource(R.string.main_status_pending, stringResource(pending.titleRes())),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 if (state.running) {
                     Text(
                         text = stringResource(R.string.main_status_checking),
@@ -182,7 +189,7 @@ private fun DiagnosticsCard(state: CheckState, traffic: TrafficTotals) {
 
 /** "Wi-Fi · checked at 14:05". */
 @Composable
-private fun resultDetails(result: CheckResult): String {
-    val time = DateFormat.getTimeFormat(LocalContext.current).format(Date(result.finishedAtMillis))
-    return stringResource(R.string.main_status_details, stringResource(result.networkType.labelRes()), time)
+private fun statusDetails(shown: ShownStatus): String {
+    val time = DateFormat.getTimeFormat(LocalContext.current).format(Date(shown.checkedAtMillis))
+    return stringResource(R.string.main_status_details, stringResource(shown.networkType.labelRes()), time)
 }

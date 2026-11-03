@@ -10,15 +10,20 @@ import androidx.datastore.dataStoreFile
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import org.s0me0ne25.cellprobe.core.journal.TrafficTotals
+import org.s0me0ne25.cellprobe.core.stabilizer.StabilizerState
 import org.s0me0ne25.cellprobe.data.AppSettings
 import org.s0me0ne25.cellprobe.data.AppSettingsSerializer
 import org.s0me0ne25.cellprobe.data.JournalStore
 import org.s0me0ne25.cellprobe.data.SettingsRepository
+import org.s0me0ne25.cellprobe.data.StabilizerStateSerializer
+import org.s0me0ne25.cellprobe.data.StabilizerStore
 import org.s0me0ne25.cellprobe.data.TrafficStore
 import org.s0me0ne25.cellprobe.data.TrafficTotalsSerializer
 import org.s0me0ne25.cellprobe.engine.CheckController
 import org.s0me0ne25.cellprobe.engine.ManualCheckRunner
 import org.s0me0ne25.cellprobe.engine.MonitoringAlarm
+import org.s0me0ne25.cellprobe.engine.StatusTracker
+import org.s0me0ne25.cellprobe.notify.TransitionNotifications
 import org.s0me0ne25.cellprobe.probe.ProbeClientFactory
 import org.s0me0ne25.cellprobe.probe.TlsSetup
 import org.s0me0ne25.cellprobe.probe.UserAgentProvider
@@ -69,9 +74,22 @@ class AppContainer(context: Context) {
         TrafficStore(dataStore)
     }
 
+    private val stabilizerStore: StabilizerStore by lazy {
+        val dataStore = DataStoreFactory.create(
+            serializer = StabilizerStateSerializer,
+            corruptionHandler = ReplaceFileCorruptionHandler { StabilizerState() },
+            produceFile = { appContext.dataStoreFile(STABILIZER_FILE) },
+        )
+        StabilizerStore(dataStore)
+    }
+
+    val statusTracker: StatusTracker by lazy {
+        StatusTracker(stabilizerStore, settingsRepository, TransitionNotifications(appContext))
+    }
+
     /** The check shared by all screens of the process. */
     val checkController: CheckController by lazy {
-        CheckController(settingsRepository, networkStateReader, manualCheckRunner, journalStore, trafficStore)
+        CheckController(settingsRepository, networkStateReader, manualCheckRunner, journalStore, trafficStore, statusTracker)
     }
 
     val monitoringPermissions: MonitoringPermissions by lazy { MonitoringPermissions(appContext) }
@@ -100,5 +118,6 @@ class AppContainer(context: Context) {
         const val SETTINGS_FILE = "settings.json"
         const val TRAFFIC_FILE = "traffic.json"
         const val JOURNAL_FILE = "journal.jsonl"
+        const val STABILIZER_FILE = "stabilizer.json"
     }
 }

@@ -23,7 +23,8 @@ import java.util.Date
 
 /**
  * The persistent notification of the monitoring service (spec §7.2): the
- * current status, network type and time of the last check. It holds no
+ * confirmed status, network type and time of the last check, and the
+ * status being confirmed, if any. It holds no
  * addresses or labels, so it may show in full on the lock screen.
  */
 object ServiceNotification {
@@ -49,15 +50,19 @@ object ServiceNotification {
     }
 
     fun build(context: Context, state: CheckState): Notification {
-        val result = state.result
+        val shown = state.shown
         val title = when {
-            result != null -> context.getString(result.status.titleRes())
+            shown != null -> context.getString(shown.status.titleRes())
             state.running -> context.getString(R.string.main_status_checking)
             else -> context.getString(R.string.notification_no_checks)
         }
-        val text = result?.let {
-            val time = DateFormat.getTimeFormat(context).format(Date(it.finishedAtMillis))
-            context.getString(R.string.main_status_details, context.getString(it.networkType.labelRes()), time)
+        val text = shown?.let {
+            val time = DateFormat.getTimeFormat(context).format(Date(it.checkedAtMillis))
+            val details = context.getString(R.string.main_status_details, context.getString(it.networkType.labelRes()), time)
+            val pending = it.pending?.let { status ->
+                context.getString(R.string.main_status_pending, context.getString(status.titleRes()))
+            }
+            listOfNotNull(details, pending).joinToString(" · ")
         }
         val open = PendingIntent.getActivity(
             context,
@@ -75,6 +80,7 @@ object ServiceNotification {
             .setShowWhen(false)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setGroup(NotificationGroups.MONITORING)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()

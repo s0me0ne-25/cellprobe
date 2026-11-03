@@ -87,6 +87,26 @@ data class CheckState(
     val result: CheckResult? = null,
     /** The last check could not run at all (e.g. the TLS library failed to load). */
     val failed: Boolean = false,
+    /** The confirmed status while monitoring is on (spec §6); null otherwise. */
+    val confirmation: Confirmation? = null,
+) {
+    /**
+     * What the main screen and the service notification show: the
+     * confirmed status while monitoring is on, the result of the last check
+     * otherwise.
+     */
+    val shown: ShownStatus?
+        get() = confirmation?.let { ShownStatus(it.status, it.networkType, it.checkedAtMillis, it.pending) }
+            ?: result?.let { ShownStatus(it.status, it.networkType, it.finishedAtMillis, pending = null) }
+}
+
+/** A status as shown to the user, with the time of the last check. */
+data class ShownStatus(
+    val status: NetworkStatus,
+    val networkType: NetworkType?,
+    val checkedAtMillis: Long,
+    /** A different status the last check saw, being confirmed by a recheck. */
+    val pending: NetworkStatus?,
 )
 
 /**
@@ -102,6 +122,7 @@ class CheckController(
     private val runner: ManualCheckRunner,
     private val journal: JournalStore,
     private val traffic: TrafficStore,
+    private val tracker: StatusTracker,
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -112,6 +133,9 @@ class CheckController(
 
     init {
         scope.launch { restoreLastCheck() }
+        scope.launch {
+            tracker.confirmation.collect { confirmation -> mutableState.update { it.copy(confirmation = confirmation) } }
+        }
     }
 
     /** Starts a check unless one is already running; returns the running check. */
@@ -221,6 +245,11 @@ class CheckController(
             journal.append(journalEntry(result, trafficBytes, sections))
         } catch (_: IOException) {
             // The check itself succeeded; a full disk must not turn it into a failure.
+        }
+        try {
+            tracker.onCheckFinished(result)
+        } catch (_: IOException) {
+            // Without its stored state the stabilizer skips this check; the next one tries again.
         }
     }
 
