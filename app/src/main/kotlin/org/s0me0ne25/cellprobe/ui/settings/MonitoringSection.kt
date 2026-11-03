@@ -37,6 +37,7 @@ import org.s0me0ne25.cellprobe.R
 import org.s0me0ne25.cellprobe.core.monitoring.MonitoringSettings
 import org.s0me0ne25.cellprobe.system.MonitoringPermission
 import org.s0me0ne25.cellprobe.system.MonitoringPermissions
+import org.s0me0ne25.cellprobe.system.XiaomiBackground
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -49,6 +50,10 @@ import kotlin.time.Duration.Companion.seconds
  * first, then the system request, or skip. Monitoring is on whatever the
  * answers; what is still missing stays listed under the switch, rechecked
  * whenever the screen is shown again.
+ *
+ * On Xiaomi the onboarding ends with how to keep monitoring alive through
+ * "clear memory" ([XiaomiBackground]); the same advice stays under the
+ * switch, as its state cannot be read.
  */
 @Composable
 fun MonitoringSection(
@@ -69,6 +74,8 @@ fun MonitoringSection(
 
     // Onboarding: the permissions still to explain, in order.
     var onboarding by rememberSaveable { mutableStateOf(emptyList<MonitoringPermission>()) }
+    // Shown after the permissions.
+    var xiaomiHint by rememberSaveable { mutableStateOf(false) }
     val nextStep = { onboarding = onboarding.drop(1).filterNot(permissions::isGranted) }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         resumes++
@@ -107,7 +114,10 @@ fun MonitoringSection(
         )
         val toggle = { enabled: Boolean ->
             onEnabledChange(enabled)
-            if (enabled) onboarding = permissions.missing()
+            if (enabled) {
+                onboarding = permissions.missing()
+                xiaomiHint = XiaomiBackground.applies()
+            }
         }
         ListItem(
             headlineContent = { Text(stringResource(R.string.monitoring_enabled)) },
@@ -124,6 +134,14 @@ fun MonitoringSection(
                         Text(text = stringResource(permission.missingRes), color = MaterialTheme.colorScheme.error)
                     },
                     modifier = Modifier.clickable { request(permission, fromOnboarding = false) },
+                )
+                HorizontalDivider()
+            }
+            if (XiaomiBackground.applies()) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.xiaomi_background_title)) },
+                    supportingContent = { Text(stringResource(R.string.xiaomi_background_hint)) },
+                    modifier = Modifier.clickable { XiaomiBackground.openAutostartSettings(context) },
                 )
                 HorizontalDivider()
             }
@@ -154,6 +172,25 @@ fun MonitoringSection(
             },
             dismissButton = {
                 TextButton(onClick = nextStep) { Text(stringResource(R.string.action_skip)) }
+            },
+        )
+    }
+
+    if (onboarding.isEmpty() && xiaomiHint) {
+        AlertDialog(
+            onDismissRequest = { xiaomiHint = false },
+            title = { Text(stringResource(R.string.xiaomi_background_title)) },
+            text = { Text(stringResource(R.string.xiaomi_background_explanation)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        xiaomiHint = false
+                        XiaomiBackground.openAutostartSettings(context)
+                    },
+                ) { Text(stringResource(R.string.xiaomi_background_open_autostart)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { xiaomiHint = false }) { Text(stringResource(R.string.action_skip)) }
             },
         )
     }

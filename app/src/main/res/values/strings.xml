@@ -213,6 +213,10 @@
     <string name="permission_exact_alarms_title">Alarms &amp; reminders</string>
     <string name="permission_exact_alarms_explanation">To wake the phone for the next check right on time, Cellprobe needs the “Alarms &amp; reminders” permission. Without it the system shifts the checks as it sees fit and the intervals become approximate. The settings screen opens next: turn the switch on and come back.</string>
     <string name="permission_exact_alarms_missing">No permission for exact alarms: the intervals are approximate. Tap to allow.</string>
+    <string name="xiaomi_background_title">Clearing memory on Xiaomi</string>
+    <string name="xiaomi_background_explanation">On “clear memory”, Xiaomi firmware (MIUI, HyperOS) stops apps, even those running without battery restrictions. To keep monitoring going:\n\n• lock Cellprobe in the recent apps: long-press its card and tap the lock. Clearing memory and swiping it away then leave it alone;\n\n• turn on autostart for Cellprobe: stopped monitoring then comes back by itself for the next check.</string>
+    <string name="xiaomi_background_hint">Lock Cellprobe in the recent apps and turn on autostart, or clearing memory stops monitoring. Tap to open the autostart settings.</string>
+    <string name="xiaomi_background_open_autostart">Open autostart</string>
     <string name="interval_seconds">%1$d s</string>
     <string name="interval_minutes">%1$d min</string>
 </resources>

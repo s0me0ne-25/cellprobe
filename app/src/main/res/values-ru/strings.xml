@@ -212,6 +212,10 @@
     <string name="permission_exact_alarms_title">Будильники и напоминания</string>
     <string name="permission_exact_alarms_explanation">Чтобы будить телефон к очередной проверке точно в срок, Cellprobe нужно разрешение «Будильники и напоминания». Без него система сдвигает проверки на своё усмотрение, и интервалы становятся приблизительными. Сейчас откроется экран настроек: включите переключатель и вернитесь назад.</string>
     <string name="permission_exact_alarms_missing">Нет разрешения на точные будильники: интервалы приблизительные. Нажмите, чтобы разрешить.</string>
+    <string name="xiaomi_background_title">Очистка памяти на Xiaomi</string>
+    <string name="xiaomi_background_explanation">При очистке памяти прошивка Xiaomi (MIUI, HyperOS) останавливает приложения, даже работающие без ограничений батареи. Чтобы мониторинг не прерывался:\n\n• закрепите Cellprobe в недавних: долгое нажатие на карточку → замочек. Тогда очистка памяти и смахивание его не трогают;\n\n• включите для Cellprobe автозапуск: тогда остановленный мониторинг сам поднимется к следующей проверке.</string>
+    <string name="xiaomi_background_hint">Закрепите Cellprobe в недавних и включите автозапуск, иначе очистка памяти останавливает мониторинг. Нажмите, чтобы открыть настройки автозапуска.</string>
+    <string name="xiaomi_background_open_autostart">Открыть автозапуск</string>
     <string name="interval_seconds">%1$d с</string>
     <string name="interval_minutes">%1$d мин</string>
 </resources>
