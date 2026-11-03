@@ -9,6 +9,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.SystemClock
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
@@ -157,6 +158,12 @@ class MonitoringService : Service() {
     override fun onDestroy() {
         running = false
         scope.cancel()
+        // Monitoring is over, and none of Cellprobe's notifications has anything
+        // current to say. The status collector may have re-posted the service
+        // notification after the service left the foreground (turning
+        // monitoring off also changes the shown status): with the scope
+        // cancelled first, nothing posts after this.
+        NotificationManagerCompat.from(this).cancelAll()
         container.monitoringAlarm.cancel()
         if (checkWakeLock.isHeld) checkWakeLock.release()
         container.monitoringWakeLock.let { if (it.isHeld) it.release() }
