@@ -20,7 +20,7 @@
     <string name="main_status_pending">Being confirmed: %1$s</string>
     <string name="main_status_details">%1$s · checked at %2$s</string>
     <string name="main_traffic">Check traffic: %1$s today, %2$s this month</string>
-    <string name="main_cert_ru_ca">Answer with a Russian state certificate: %1$s. Such entries count as unreachable.</string>
+    <string name="main_cert_ru_ca">Answer with a Russian state certificate: %1$s.\n\nIn the Cellprobe settings you can press 👮 to allow them for individual resources of the “Always reachable” and “Provider account pages” lists.\n\nWarning: a Russian state certificate on an international site and/or a VLESS inbound is a clear sign that a censor is interfering with your traffic!</string>
 
     <!-- Journal -->
     <string name="journal_title">Log</string>
@@ -235,4 +235,18 @@
     <string name="xiaomi_background_open_autostart">Open autostart</string>
     <string name="interval_seconds">%1$d s</string>
     <string name="interval_minutes">%1$d min</string>
+    <!-- Trust in the Russian state CA for one entry (spec §2.3). -->
+    <string name="editor_ru_ca_off">Russian state certificates for %1$s: not allowed</string>
+    <string name="editor_ru_ca_on">Russian state certificates for %1$s: allowed</string>
+    <string name="ru_ca_confirm_title">Allow Russian state certificates for %1$s?</string>
+    <string name="ru_ca_confirm_text">Turn this on only if you are sure that the site %1$s really uses a Russian state certificate in its normal operation. Otherwise Cellprobe may fail to detect some kinds of blocking and/or eavesdropping on your traffic.\n\nCellprobe will trust the Russian state CA only when checking %1$s. Other entries, other checks and other apps are not affected.\n\nThe first time, the certificates of the Russian state CA are downloaded from gu-st.ru (linked from gosuslugi.ru/crt) and compared with the fingerprint built into Cellprobe.</string>
+    <string name="ru_ca_enable">Allow</string>
+    <string name="ru_ca_installing">Getting the certificates of the Russian state CA…</string>
+    <string name="ru_ca_pick_file">Choose file</string>
+    <string name="ru_ca_download_failed_title">Could not download the certificates</string>
+    <string name="ru_ca_download_failed_text">The certificates of the Russian state CA could not be downloaded from gu-st.ru. Download the root certificate (Russian Trusted Root CA) from gosuslugi.ru/crt yourself and choose the file.</string>
+    <string name="ru_ca_unreadable_title">Could not read the file</string>
+    <string name="ru_ca_unreadable_text">No certificate was found in the chosen files. Choose the root certificate (Russian Trusted Root CA) downloaded from gosuslugi.ru/crt.</string>
+    <string name="ru_ca_wrong_root_title">Certificate rejected</string>
+    <string name="ru_ca_wrong_root_text">The fingerprint of the certificate does not match the root certificate of the Russian state CA built into Cellprobe. Choose the root certificate (Russian Trusted Root CA) downloaded from gosuslugi.ru/crt.</string>
 </resources>

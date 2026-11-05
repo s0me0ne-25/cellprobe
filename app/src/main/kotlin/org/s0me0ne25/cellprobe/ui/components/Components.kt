@@ -19,6 +19,8 @@ import org.s0me0ne25.cellprobe.R
 object Emoji {
     const val EDIT = "✏️"
     const val DELETE = "❌"
+    const val POLICE = "👮"
+    const val PROHIBITED = "🚫"
 }
 
 /**

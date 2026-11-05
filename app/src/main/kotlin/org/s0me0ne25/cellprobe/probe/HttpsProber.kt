@@ -25,11 +25,17 @@ import org.s0me0ne25.cellprobe.core.resources.ResourceEntry
  * Reachable means a valid TLS chain and any HTTP response; redirects are
  * not followed. The body is read only when a marker must be checked or
  * [readBody] is set (manual checks show page titles).
+ *
+ * An entry that trusts the Russian state CA is probed with a client of its
+ * own from [russianStateClient], built for that one request; null while
+ * the certificates are not installed, and the entry is then probed like
+ * any other (CERT_RU_CA).
  */
 class HttpsProber(
     private val client: OkHttpClient,
     private val headers: List<Pair<String, String>>,
     private val readBody: Boolean,
+    private val russianStateClient: (() -> OkHttpClient)? = null,
 ) : EntryProber<ResourceEntry> {
 
     override suspend fun probe(entry: ResourceEntry): ProbeOutcome = coroutineScope {
@@ -39,7 +45,8 @@ class HttpsProber(
             .apply { headers.forEach { (name, value) -> header(name, value) } }
             .tag(PhaseHolder::class, holder)
             .build()
-        val call = client.newCall(request)
+        val entryClient = if (entry.allowRuCa) russianStateClient?.invoke() ?: client else client
+        val call = entryClient.newCall(request)
 
         // Blocking I/O does not react to coroutine cancellation by itself:
         // cancelling the call closes its socket and unblocks the read.

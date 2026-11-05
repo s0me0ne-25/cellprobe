@@ -9,8 +9,8 @@ import kotlinx.serialization.Serializable
  *
  * @property url canonical https URL, see [UrlNormalizer.normalize].
  * @property marker optional substring the response body must contain.
- * @property allowRuCa trust the Russian state root CA for this entry only.
- *   Not editable yet; always false until the per-entry CA feature lands.
+ * @property allowRuCa trust the Russian state CA for this entry only
+ *   (spec §2.3); see [ResourceListEditing.setAllowRuCa].
  */
 @Serializable
 data class ResourceEntry(

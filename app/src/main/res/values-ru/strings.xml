@@ -17,7 +17,7 @@
     <string name="main_status_pending">Уточняется: %1$s</string>
     <string name="main_status_details">%1$s · проверено в %2$s</string>
     <string name="main_traffic">Трафик проверок: сегодня %1$s, за месяц %2$s</string>
-    <string name="main_cert_ru_ca">Отвечают с сертификатом Минцифры: %1$s. Такие записи считаются недоступными.</string>
+    <string name="main_cert_ru_ca">Отвечают с сертификатом Минцифры: %1$s.\n\nВ настройках Cellprobe вы можете индивидуально разрешить кнопкой 👮 их использование некоторым ресурсам из списков «Всегда доступные» и «Личные кабинеты провайдеров».\n\nВнимание: сертификат Минцифры у международных сайтов и/или VLESS-входов — явный признак вмешательства цензора в ваш трафик!</string>
 
     <!-- Journal -->
     <string name="journal_title">Журнал</string>
@@ -231,4 +231,17 @@
     <string name="xiaomi_background_open_autostart">Открыть автозапуск</string>
     <string name="interval_seconds">%1$d с</string>
     <string name="interval_minutes">%1$d мин</string>
+    <string name="editor_ru_ca_off">Сертификаты Минцифры для %1$s: не разрешены</string>
+    <string name="editor_ru_ca_on">Сертификаты Минцифры для %1$s: разрешены</string>
+    <string name="ru_ca_confirm_title">Разрешить сертификаты Минцифры для %1$s?</string>
+    <string name="ru_ca_confirm_text">Включайте, только если вы уверены, что сайт %1$s действительно использует сертификат Минцифры при его штатной работе. В противном случае Cellprobe может не распознать некоторые виды блокировки и/или подслушивания вашего трафика.\n\nCellprobe будет доверять удостоверяющему центру Минцифры только при проверке %1$s. Остальные записи, другие проверки и другие приложения это не затрагивает.\n\nПри первом включении сертификаты УЦ Минцифры загружаются с gu-st.ru (ссылка с gosuslugi.ru/crt) и сверяются с отпечатком, встроенным в Cellprobe.</string>
+    <string name="ru_ca_enable">Разрешить</string>
+    <string name="ru_ca_installing">Получение сертификатов УЦ Минцифры…</string>
+    <string name="ru_ca_pick_file">Выбрать файл</string>
+    <string name="ru_ca_download_failed_title">Не удалось загрузить сертификаты</string>
+    <string name="ru_ca_download_failed_text">Не удалось скачать сертификаты УЦ Минцифры с gu-st.ru. Скачайте корневой сертификат (Russian Trusted Root CA) на gosuslugi.ru/crt сами и выберите файл.</string>
+    <string name="ru_ca_unreadable_title">Не удалось прочитать файл</string>
+    <string name="ru_ca_unreadable_text">В выбранных файлах нет сертификатов. Выберите корневой сертификат (Russian Trusted Root CA), скачанный с gosuslugi.ru/crt.</string>
+    <string name="ru_ca_wrong_root_title">Сертификат отвергнут</string>
+    <string name="ru_ca_wrong_root_text">Отпечаток сертификата не совпадает с корневым сертификатом УЦ Минцифры, встроенным в Cellprobe. Выберите корневой сертификат (Russian Trusted Root CA), скачанный с gosuslugi.ru/crt.</string>
 </resources>

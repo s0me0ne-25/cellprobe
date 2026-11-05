@@ -4,6 +4,7 @@ package org.s0me0ne25.cellprobe.core.probe
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.s0me0ne25.cellprobe.core.certs.RussianStateCertificateException
 import java.io.EOFException
 import java.io.IOException
 import java.net.ConnectException
@@ -43,6 +44,14 @@ class ProbeErrorClassifierTest {
         val untrusted = SSLHandshakeException("untrusted").apply { initCause(CertificateException(CertPathValidatorException())) }
         assertEquals(ProbeCode.CERT_INVALID, classify(ProbePhase.TLS, untrusted))
         assertEquals(ProbeCode.CERT_INVALID, classify(ProbePhase.TLS, SSLPeerUnverifiedException("Hostname not verified")))
+    }
+
+    @Test
+    fun `a chain of the Russian state CA is CERT_RU_CA`() {
+        val rejected = SSLHandshakeException("untrusted").apply {
+            initCause(RussianStateCertificateException(CertificateException(CertPathValidatorException())))
+        }
+        assertEquals(ProbeCode.CERT_RU_CA, classify(ProbePhase.TLS, rejected))
     }
 
     @Test

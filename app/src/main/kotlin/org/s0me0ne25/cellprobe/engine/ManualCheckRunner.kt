@@ -15,6 +15,7 @@ import org.s0me0ne25.cellprobe.core.probe.ListProbing
 import org.s0me0ne25.cellprobe.core.probe.WebViewHeaders
 import org.s0me0ne25.cellprobe.core.resources.ResourceListState
 import org.s0me0ne25.cellprobe.core.vless.VlessEntry
+import org.s0me0ne25.cellprobe.data.RussianStateCaStore
 import org.s0me0ne25.cellprobe.probe.HttpsProber
 import org.s0me0ne25.cellprobe.probe.ProbeClientFactory
 import org.s0me0ne25.cellprobe.probe.UserAgentProvider
@@ -27,6 +28,7 @@ import org.s0me0ne25.cellprobe.probe.VlessProber
 class ManualCheckRunner(
     private val clientFactory: ProbeClientFactory,
     private val userAgentProvider: UserAgentProvider,
+    private val russianStateCa: RussianStateCaStore,
 ) {
 
     suspend fun run(
@@ -38,7 +40,9 @@ class ManualCheckRunner(
         val headers = WebViewHeaders.navigation(userAgent, UserAgentProvider.systemLanguageTags())
         // Creating the client loads Conscrypt's native library: keep it off the main thread.
         val client = withContext(Dispatchers.IO) { clientFactory.create() }
-        val httpsProber = HttpsProber(client, headers, readBody = true)
+        val anchors = russianStateCa.anchors()
+        val russianStateClient = anchors?.let { { clientFactory.trustingAlso(client, it) } }
+        val httpsProber = HttpsProber(client, headers, readBody = true, russianStateClient)
         val vlessProber = VlessProber(headers, clientFor = { dns, sockets -> clientFactory.inboundClient(client, dns, sockets) })
         return try {
             coroutineScope {

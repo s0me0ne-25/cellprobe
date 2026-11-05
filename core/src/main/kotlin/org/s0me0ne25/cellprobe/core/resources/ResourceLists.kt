@@ -34,6 +34,10 @@ enum class ResourceListId {
     /** Lists with a preset must never be saved empty. */
     val mayBeEmpty: Boolean
         get() = preset == null
+
+    /** Entries of lists 1 and provider pages may trust the Russian state CA (spec §2.3). */
+    val allowsRuCa: Boolean
+        get() = this == DOMESTIC || this == PROVIDER
 }
 
 object Presets {
@@ -73,12 +77,15 @@ object Presets {
  *
  * While [customized] is false the list follows the preset of the running
  * app version and [entries] is not used, so preset updates reach users who
- * never edited the list.
+ * never edited the list. The entries of the preset that trust the Russian
+ * state CA are then kept as [ruCaHosts]: by host, so the flag survives a
+ * preset update for an entry with the same host (spec §2.3).
  */
 @Serializable
 data class StoredResourceList(
     val customized: Boolean = false,
     val entries: List<ResourceEntry> = emptyList(),
+    val ruCaHosts: Set<String> = emptySet(),
 )
 
 /** What the UI and the probes see for one list. */
@@ -92,7 +99,9 @@ data class ResourceListState(
 fun StoredResourceList?.effectiveState(id: ResourceListId): ResourceListState {
     val preset = id.preset
     return if (preset != null && (this == null || !customized)) {
-        ResourceListState(id, preset, customized = false)
+        val hosts = this?.ruCaHosts.orEmpty()
+        val entries = if (hosts.isEmpty()) preset else preset.map { it.copy(allowRuCa = UrlNormalizer.host(it.url) in hosts) }
+        ResourceListState(id, entries, customized = false)
     } else {
         ResourceListState(id, this?.entries.orEmpty(), customized = preset != null)
     }
@@ -142,6 +151,24 @@ object ResourceListEditing {
             return ListEditResult.Failure(ListEditError.WOULD_BE_EMPTY)
         }
         return store(id, remaining)
+    }
+
+    /**
+     * Turns trust in the Russian state CA on or off for the entry at [url]
+     * (spec §2.3). Not an edit of the list: a list following its preset
+     * keeps following it. Editing an entry turns its flag off, since the
+     * entry from the editor has none; a reset to the preset turns all off.
+     */
+    fun setAllowRuCa(id: ResourceListId, stored: StoredResourceList?, url: String, allow: Boolean): ListEditResult {
+        if (!id.allowsRuCa) return ListEditResult.Failure(ListEditError.NOT_FOUND)
+        val state = stored.effectiveState(id)
+        if (state.entries.none { it.url == url }) return ListEditResult.Failure(ListEditError.NOT_FOUND)
+        if (id.preset != null && !state.customized) {
+            val host = UrlNormalizer.host(url) ?: return ListEditResult.Failure(ListEditError.NOT_FOUND)
+            val hosts = stored?.ruCaHosts.orEmpty().let { if (allow) it + host else it - host }
+            return ListEditResult.Success(StoredResourceList(customized = false, ruCaHosts = hosts))
+        }
+        return store(id, state.entries.map { if (it.url == url) it.copy(allowRuCa = allow) else it })
     }
 
     fun resetToPreset(id: ResourceListId): ListEditResult {

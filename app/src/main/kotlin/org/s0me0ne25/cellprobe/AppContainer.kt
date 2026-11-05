@@ -7,13 +7,22 @@ import android.os.PowerManager
 import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.dataStoreFile
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.s0me0ne25.cellprobe.core.journal.TrafficTotals
 import org.s0me0ne25.cellprobe.core.stabilizer.StabilizerState
 import org.s0me0ne25.cellprobe.data.AppSettings
 import org.s0me0ne25.cellprobe.data.AppSettingsSerializer
 import org.s0me0ne25.cellprobe.data.JournalStore
+import org.s0me0ne25.cellprobe.data.RussianStateCaStore
 import org.s0me0ne25.cellprobe.data.SettingsRepository
 import org.s0me0ne25.cellprobe.data.StabilizerStateSerializer
 import org.s0me0ne25.cellprobe.data.StabilizerStore
@@ -31,6 +40,8 @@ import org.s0me0ne25.cellprobe.system.InstalledApps
 import org.s0me0ne25.cellprobe.system.MonitoringPermissions
 import org.s0me0ne25.cellprobe.system.NetworkStateReader
 import java.io.File
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 /**
  * Manual dependency container, one per process.
@@ -57,7 +68,41 @@ class AppContainer(context: Context) {
 
     val probeClientFactory: ProbeClientFactory by lazy { ProbeClientFactory(tls = { tlsSetup }) }
 
-    private val manualCheckRunner: ManualCheckRunner by lazy { ManualCheckRunner(probeClientFactory, userAgentProvider) }
+    private val manualCheckRunner: ManualCheckRunner by lazy {
+        ManualCheckRunner(probeClientFactory, userAgentProvider, russianStateCaStore)
+    }
+
+    /** Process-wide background work that outlives any screen. */
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /** Plain HTTPS downloads: the platform TLS and trust, redirects followed. */
+    private val downloadClient: OkHttpClient by lazy {
+        OkHttpClient.Builder().callTimeout(DOWNLOAD_TIMEOUT_SECONDS, TimeUnit.SECONDS).build()
+    }
+
+    /** Certificates of the Russian state CA for entries that trust it (spec §2.3); never backed up. */
+    val russianStateCaStore: RussianStateCaStore by lazy {
+        RussianStateCaStore(File(appContext.noBackupFilesDir, RUSSIAN_STATE_CA_FILE), ::download)
+    }
+
+    private suspend fun download(url: String): ByteArray = withContext(Dispatchers.IO) {
+        downloadClient.newCall(Request.Builder().url(url).build()).execute().use { response ->
+            if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
+            val body = response.body.source()
+            if (body.request(MAX_DOWNLOAD_BYTES + 1)) throw IOException("Too large")
+            body.readByteArray()
+        }
+    }
+
+    /**
+     * Removes the certificates of the Russian state CA once no entry trusts
+     * them (spec §2.3): turned off, edited, removed or reset to the preset.
+     */
+    fun startRussianStateCaCleanup() {
+        applicationScope.launch {
+            settingsRepository.anyAllowsRuCa.filter { !it }.collect { russianStateCaStore.delete() }
+        }
+    }
 
     val networkStateReader: NetworkStateReader by lazy { NetworkStateReader(appContext) }
 
@@ -121,5 +166,10 @@ class AppContainer(context: Context) {
         const val TRAFFIC_FILE = "traffic.json"
         const val JOURNAL_FILE = "journal.jsonl"
         const val STABILIZER_FILE = "stabilizer.json"
+        const val RUSSIAN_STATE_CA_FILE = "russian_state_ca.pem"
+        const val DOWNLOAD_TIMEOUT_SECONDS = 30L
+
+        /** The certificates are a few kilobytes; anything much larger is not them. */
+        const val MAX_DOWNLOAD_BYTES = 64L * 1024
     }
 }

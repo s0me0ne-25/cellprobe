@@ -80,6 +80,13 @@ object UrlNormalizer {
         }
     }
 
+    /** Lowercase ASCII host of a canonical URL, or null if it has none. */
+    fun host(canonicalUrl: String): String? = try {
+        URI(canonicalUrl).host?.lowercase()
+    } catch (_: URISyntaxException) {
+        null
+    }
+
     /**
      * Human-readable form of a canonical URL: Unicode host, then port and
      * path if present. The query is omitted.

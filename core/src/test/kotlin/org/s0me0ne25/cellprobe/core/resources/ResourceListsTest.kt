@@ -148,6 +148,84 @@ class ResourceListsTest {
     }
 
     @Test
+    fun `a flag on a preset entry keeps the list following the preset`() {
+        val url = domesticPreset.first().url
+        val stored = ResourceListEditing.setAllowRuCa(domestic, null, url, allow = true).stored()
+
+        assertFalse(stored.customized)
+        val state = stored.effectiveState(domestic)
+        assertFalse(state.customized)
+        assertEquals(listOf(true) + List(domesticPreset.size - 1) { false }, state.entries.map { it.allowRuCa })
+
+        val off = ResourceListEditing.setAllowRuCa(domestic, stored, url, allow = false).stored()
+        assertEquals(StoredResourceList(customized = false), off)
+    }
+
+    @Test
+    fun `a flag on a preset entry survives a preset update for the same host`() {
+        val stored = StoredResourceList(customized = false, ruCaHosts = setOf("ya.ru", "gone.example"))
+        // Hosts no longer in the preset simply match nothing.
+        val flagged = stored.effectiveState(domestic).entries.filter { it.allowRuCa }.map { it.url }
+        assertEquals(listOf("https://ya.ru"), flagged)
+    }
+
+    @Test
+    fun `flags of a customized list live in its entries`() {
+        val added = ResourceEntry("https://bank.example")
+        val edited = ResourceListEditing.add(domestic, domesticPreset, added).stored()
+        val flagged = ResourceListEditing.setAllowRuCa(domestic, edited, added.url, allow = true).stored()
+
+        assertTrue(flagged.customized)
+        assertTrue(flagged.entries.single { it.url == added.url }.allowRuCa)
+    }
+
+    @Test
+    fun `editing an entry turns its flag off and keeps the others`() {
+        val first = domesticPreset[0].url
+        val second = domesticPreset[1].url
+        var stored = ResourceListEditing.setAllowRuCa(domestic, null, first, allow = true).stored()
+        stored = ResourceListEditing.setAllowRuCa(domestic, stored, second, allow = true).stored()
+
+        // The editor hands back a new entry without the flag.
+        val replaced = ResourceListEditing
+            .replace(domestic, stored.effectiveState(domestic).entries, first, ResourceEntry(first))
+            .stored()
+        val entries = replaced.effectiveState(domestic).entries
+        assertFalse(entries.single { it.url == first }.allowRuCa)
+        assertTrue(entries.single { it.url == second }.allowRuCa)
+    }
+
+    @Test
+    fun `turning the last flag off a customized list equal to the preset returns to the preset`() {
+        val url = domesticPreset.first().url
+        val customized = StoredResourceList(customized = true, entries = domesticPreset.map { it.copy(allowRuCa = it.url == url) })
+        val off = ResourceListEditing.setAllowRuCa(domestic, customized, url, allow = false).stored()
+        assertEquals(StoredResourceList(customized = false), off)
+    }
+
+    @Test
+    fun `reset to preset turns all flags off`() {
+        val stored = ResourceListEditing.resetToPreset(domestic).stored()
+        assertTrue(stored.effectiveState(domestic).entries.none { it.allowRuCa })
+    }
+
+    @Test
+    fun `only lists 1 and provider pages take the flag`() {
+        val foreign = ResourceListId.FOREIGN
+        assertEquals(
+            ListEditError.NOT_FOUND,
+            ResourceListEditing.setAllowRuCa(foreign, null, foreign.preset!!.first().url, allow = true).error(),
+        )
+        val provider = StoredResourceList(customized = true, entries = listOf(ResourceEntry("https://lk.example")))
+        val flagged = ResourceListEditing.setAllowRuCa(ResourceListId.PROVIDER, provider, "https://lk.example", allow = true).stored()
+        assertTrue(flagged.entries.single().allowRuCa)
+        assertEquals(
+            ListEditError.NOT_FOUND,
+            ResourceListEditing.setAllowRuCa(ResourceListId.PROVIDER, provider, "https://other.example", allow = true).error(),
+        )
+    }
+
+    @Test
     fun `stored format uses stable names`() {
         val json = Json { encodeDefaults = true }
         val original = mapOf(
@@ -158,7 +236,7 @@ class ResourceListsTest {
         )
         val text = json.encodeToString(original)
         assertEquals(
-            """{"provider":{"customized":true,"entries":[{"url":"https://lk.example","marker":"Баланс","allowRuCa":false}]}}""",
+            """{"provider":{"customized":true,"entries":[{"url":"https://lk.example","marker":"Баланс","allowRuCa":false}],"ruCaHosts":[]}}""",
             text,
         )
         assertEquals(original, json.decodeFromString<Map<ResourceListId, StoredResourceList>>(text))

@@ -11,6 +11,7 @@ import org.s0me0ne25.cellprobe.core.monitoring.MonitoringSettings
 import org.s0me0ne25.cellprobe.core.resources.ListEditError
 import org.s0me0ne25.cellprobe.core.resources.ListEditResult
 import org.s0me0ne25.cellprobe.core.resources.ResourceEntry
+import org.s0me0ne25.cellprobe.core.resources.ResourceListEditing
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.core.resources.ResourceListState
 import org.s0me0ne25.cellprobe.core.resources.effectiveState
@@ -84,6 +85,29 @@ class SettingsRepository(private val dataStore: DataStore<AppSettings>) {
      * Applies [edit] to the current effective entries of list [id] atomically.
      * Returns the edit error, or null on success.
      */
+    /** Whether any entry trusts the Russian state CA: its certificates are kept only while one does. */
+    val anyAllowsRuCa: Flow<Boolean> = dataStore.data
+        .map { settings ->
+            ResourceListId.entries.filter { it.allowsRuCa }
+                .any { id -> settings.resourceLists[id].effectiveState(id).entries.any { it.allowRuCa } }
+        }
+        .distinctUntilChanged()
+
+    /** Turns trust in the Russian state CA on or off for one entry (spec §2.3). */
+    suspend fun setAllowRuCa(id: ResourceListId, url: String, allow: Boolean): ListEditError? {
+        var error: ListEditError? = null
+        dataStore.updateData { settings ->
+            when (val result = ResourceListEditing.setAllowRuCa(id, settings.resourceLists[id], url, allow)) {
+                is ListEditResult.Success -> settings.copy(resourceLists = settings.resourceLists + (id to result.stored))
+                is ListEditResult.Failure -> {
+                    error = result.error
+                    settings
+                }
+            }
+        }
+        return error
+    }
+
     suspend fun editResourceList(
         id: ResourceListId,
         edit: (List<ResourceEntry>) -> ListEditResult,

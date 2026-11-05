@@ -19,6 +19,7 @@ import org.s0me0ne25.cellprobe.core.probe.ProbePhase
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.Proxy
+import java.security.cert.X509Certificate
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import javax.net.SocketFactory
@@ -79,6 +80,20 @@ class ProbeClientFactory(
             .socketFactory(sockets)
             .sslSocketFactory(tlsSetup.streamSocketFactory, tlsSetup.trustManager)
             .connectionPool(ConnectionPool(1, INBOUND_KEEP_ALIVE_SECONDS, TimeUnit.SECONDS))
+            .build()
+    }
+
+    /**
+     * Derives the client for one request to an entry that trusts the
+     * Russian state CA (spec §2.3) from the cycle's [base] client: the same
+     * settings, the system roots plus [anchors], and a pool of its own, so
+     * that no connection made with this trust serves another request.
+     */
+    fun trustingAlso(base: OkHttpClient, anchors: List<X509Certificate>): OkHttpClient {
+        val tlsSetup = tls().trustingAlso(anchors)
+        return base.newBuilder()
+            .sslSocketFactory(tlsSetup.socketFactory, tlsSetup.trustManager)
+            .connectionPool(ConnectionPool(0, 1, TimeUnit.SECONDS))
             .build()
     }
 

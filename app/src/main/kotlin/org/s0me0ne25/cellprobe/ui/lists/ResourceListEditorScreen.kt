@@ -2,6 +2,11 @@
 
 package org.s0me0ne25.cellprobe.ui.lists
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -10,13 +15,17 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -38,13 +47,18 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.s0me0ne25.cellprobe.R
 import org.s0me0ne25.cellprobe.core.resources.ResourceEntry
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
+import org.s0me0ne25.cellprobe.data.RussianStateCaResult
 import org.s0me0ne25.cellprobe.ui.components.BackButton
 import org.s0me0ne25.cellprobe.ui.components.Emoji
 import org.s0me0ne25.cellprobe.ui.components.EmojiButton
@@ -66,6 +80,8 @@ fun ResourceListEditorScreen(
     ),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val ruCaAnswered by viewModel.ruCaAnswered.collectAsStateWithLifecycle()
+    val ruCaStep by viewModel.ruCaStep.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val resources = LocalResources.current
 
@@ -148,6 +164,8 @@ fun ResourceListEditorScreen(
             items(entries, key = { it.url }) { entry ->
                 EntryRow(
                     entry = entry,
+                    ruCa = if (listId.allowsRuCa) RuCaButton(entry.displayName in ruCaAnswered) else null,
+                    onRuCa = { viewModel.toggleRuCa(entry) },
                     onEdit = { dialogTarget = entry.url },
                     onDelete = { deleteTarget = entry.url },
                 )
@@ -197,6 +215,17 @@ fun ResourceListEditorScreen(
         )
     }
 
+    ruCaStep?.let { step ->
+        val entry = entries.firstOrNull { it.url == step.url }
+        RuCaDialog(
+            step = step,
+            displayName = entry?.displayName ?: step.url,
+            onConfirm = viewModel::confirmRuCa,
+            onPickFiles = viewModel::importRuCa,
+            onDismiss = viewModel::dismissRuCa,
+        )
+    }
+
     if (confirmReset) {
         AlertDialog(
             onDismissRequest = { confirmReset = false },
@@ -215,9 +244,14 @@ fun ResourceListEditorScreen(
     }
 }
 
+/** The 👮 button of an entry; [highlighted] if its last check answered with a Russian state certificate. */
+private data class RuCaButton(val highlighted: Boolean)
+
 @Composable
 private fun EntryRow(
     entry: ResourceEntry,
+    ruCa: RuCaButton?,
+    onRuCa: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -244,6 +278,9 @@ private fun EntryRow(
                 )
             }
         }
+        if (ruCa != null) {
+            RuCaToggle(entry, ruCa.highlighted, onRuCa)
+        }
         EmojiButton(
             emoji = Emoji.EDIT,
             contentDescription = stringResource(R.string.editor_edit_entry, entry.displayName),
@@ -255,4 +292,75 @@ private fun EntryRow(
             onClick = onDelete,
         )
     }
+}
+
+/**
+ * Trust in the Russian state CA for this entry (spec §2.3): 👮, crossed
+ * out with 🚫 while off; on a red ground when the last check of the entry
+ * answered with a Russian state certificate.
+ */
+@Composable
+private fun RuCaToggle(entry: ResourceEntry, highlighted: Boolean, onClick: () -> Unit) {
+    val description = stringResource(
+        if (entry.allowRuCa) R.string.editor_ru_ca_on else R.string.editor_ru_ca_off,
+        entry.displayName,
+    )
+    IconButton(onClick = onClick, modifier = Modifier.semantics { contentDescription = description }) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(36.dp)
+                .then(if (highlighted) Modifier.background(MaterialTheme.colorScheme.errorContainer, CircleShape) else Modifier)
+                .clearAndSetSemantics {},
+        ) {
+            Text(text = Emoji.POLICE, fontSize = 20.sp)
+            if (!entry.allowRuCa) Text(text = Emoji.PROHIBITED, fontSize = 24.sp)
+        }
+    }
+}
+
+@Composable
+private fun RuCaDialog(
+    step: RuCaStep,
+    displayName: String,
+    onConfirm: () -> Unit,
+    onPickFiles: (List<Uri>) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments(), onPickFiles)
+    when (step) {
+        is RuCaStep.Confirm -> AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(stringResource(R.string.ru_ca_confirm_title, displayName)) },
+            text = { Text(stringResource(R.string.ru_ca_confirm_text, displayName)) },
+            confirmButton = { TextButton(onClick = onConfirm) { Text(stringResource(R.string.ru_ca_enable)) } },
+            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+        )
+        is RuCaStep.Installing -> AlertDialog(
+            onDismissRequest = {},
+            title = { Text(stringResource(R.string.ru_ca_installing)) },
+            text = { LinearProgressIndicator(modifier = Modifier.fillMaxWidth()) },
+            confirmButton = {},
+        )
+        is RuCaStep.Failed -> AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(stringResource(step.result.titleRes())) },
+            text = { Text(stringResource(step.result.textRes())) },
+            // Certificate files come with all sorts of MIME types: let the user pick any.
+            confirmButton = { TextButton(onClick = { picker.launch(arrayOf("*/*")) }) { Text(stringResource(R.string.ru_ca_pick_file)) } },
+            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
+}
+
+private fun RussianStateCaResult.titleRes(): Int = when (this) {
+    RussianStateCaResult.DOWNLOAD_FAILED -> R.string.ru_ca_download_failed_title
+    RussianStateCaResult.UNREADABLE -> R.string.ru_ca_unreadable_title
+    RussianStateCaResult.WRONG_ROOT, RussianStateCaResult.INSTALLED -> R.string.ru_ca_wrong_root_title
+}
+
+private fun RussianStateCaResult.textRes(): Int = when (this) {
+    RussianStateCaResult.DOWNLOAD_FAILED -> R.string.ru_ca_download_failed_text
+    RussianStateCaResult.UNREADABLE -> R.string.ru_ca_unreadable_text
+    RussianStateCaResult.WRONG_ROOT, RussianStateCaResult.INSTALLED -> R.string.ru_ca_wrong_root_text
 }

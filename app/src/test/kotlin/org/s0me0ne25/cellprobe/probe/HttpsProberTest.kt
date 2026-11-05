@@ -258,4 +258,25 @@ class HttpsProberTest {
             81, 5, -38, -13, -89, 59, 7, 2, -120, 6,
         )
     }
+
+    @Test
+    fun `an entry that trusts the extra anchors gets a client of its own`() {
+        // The "system" trusts another root; the server's root is the extra anchor.
+        val otherRoot = HeldCertificate.Builder().certificateAuthority(0).commonName("Other Root").build()
+        val system = clientTrusting(otherRoot)
+        val factory = ProbeClientFactory({ system }, Dns.SYSTEM, timeouts)
+        val client = factory.create()
+        val prober = HttpsProber(client, emptyList(), readBody = false) { factory.trustingAlso(client, listOf(root.certificate)) }
+        repeat(3) { server.enqueue(MockResponse.Builder().body("ok").build()) }
+
+        val trusting = runBlocking { prober.probe(entry().copy(allowRuCa = true)) }
+        // The trust does not leak to the next entry of the same check.
+        val plain = runBlocking { prober.probe(entry()) }
+        // Without the certificates installed, the flag changes nothing.
+        val notInstalled = runBlocking { HttpsProber(client, emptyList(), readBody = false).probe(entry().copy(allowRuCa = true)) }
+
+        assertEquals(ProbeCode.OK, trusting.code)
+        assertEquals(ProbeCode.CERT_INVALID, plain.code)
+        assertEquals(ProbeCode.CERT_INVALID, notInstalled.code)
+    }
 }

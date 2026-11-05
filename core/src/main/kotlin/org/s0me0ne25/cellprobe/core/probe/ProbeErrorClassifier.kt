@@ -2,6 +2,7 @@
 
 package org.s0me0ne25.cellprobe.core.probe
 
+import org.s0me0ne25.cellprobe.core.certs.RussianStateCertificateException
 import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -25,6 +26,7 @@ object ProbeErrorClassifier {
         val chain = generateSequence(error) { it.cause }.take(MAX_CAUSE_DEPTH).toList()
 
         if (chain.any { it is UnknownHostException }) return ProbeCode.DNS_FAIL
+        if (chain.any { it is RussianStateCertificateException }) return ProbeCode.CERT_RU_CA
         if (chain.any { it.isCertificateProblem() }) return ProbeCode.CERT_INVALID
 
         val timeout = chain.any { it is SocketTimeoutException }
