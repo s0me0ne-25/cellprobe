@@ -58,6 +58,8 @@ android {
 
     buildFeatures {
         compose = true
+        // BuildConfig.DEBUG: debug-only tools in the settings.
+        buildConfig = true
     }
 
     lint {

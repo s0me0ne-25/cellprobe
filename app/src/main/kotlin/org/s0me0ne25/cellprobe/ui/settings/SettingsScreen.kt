@@ -26,6 +26,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -55,6 +56,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.s0me0ne25.cellprobe.BuildConfig
 import org.s0me0ne25.cellprobe.R
 import org.s0me0ne25.cellprobe.core.actions.AppRole
 import org.s0me0ne25.cellprobe.core.monitoring.MonitoringSettings
@@ -158,10 +160,19 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenList: (ResourceListId) -> Unit,
     onOpenVless: () -> Unit,
+    requestedPickerRole: AppRole? = null,
+    onPickerRequestShown: () -> Unit = {},
     viewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var pickerRole by rememberSaveable { mutableStateOf<AppRole?>(null) }
+    // A notification for a role without an app opens the choice of it (spec §7.3).
+    LaunchedEffect(requestedPickerRole) {
+        if (requestedPickerRole != null) {
+            pickerRole = requestedPickerRole
+            onPickerRequestShown()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -238,6 +249,9 @@ fun SettingsScreen(
                 item(key = role) {
                     RoleItem(role, current.roles[role], onClick = { pickerRole = role })
                 }
+            }
+            if (BuildConfig.DEBUG) {
+                item(key = "debug") { DebugSection() }
             }
         }
     }

@@ -5,6 +5,7 @@
     <!-- Common actions -->
     <string name="action_back">Back</string>
     <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
     <string name="action_delete">Delete</string>
     <string name="action_reset">Reset</string>
     <string name="action_save">Save</string>
@@ -211,6 +212,9 @@
     <string name="notification_stabilized_title">Network stabilized: %1$s</string>
     <!-- Before the last item of a list: "A, B and C". -->
     <string name="list_last_separator">" and "</string>
+    <!-- Buttons of the "VLESS blocked" notification (spec §7.3). -->
+    <string name="notification_action_i2p">I2P</string>
+    <string name="notification_action_vpn_client">VPN client</string>
     <string name="settings_section_monitoring">Monitoring</string>
     <string name="monitoring_enabled">Background monitoring</string>
     <string name="monitoring_enabled_description">Checks the network on its own and shows the status in a notification.</string>

@@ -28,11 +28,10 @@ import org.s0me0ne25.cellprobe.R
 import org.s0me0ne25.cellprobe.core.NetworkStatus
 import org.s0me0ne25.cellprobe.core.NetworkType
 import org.s0me0ne25.cellprobe.core.actions.AppRole
-import org.s0me0ne25.cellprobe.core.actions.ProviderPageLabels
 import org.s0me0ne25.cellprobe.core.actions.StatusAction
 import org.s0me0ne25.cellprobe.core.actions.StatusActions
-import org.s0me0ne25.cellprobe.core.probe.CheckListId
 import org.s0me0ne25.cellprobe.engine.ListSection
+import org.s0me0ne25.cellprobe.engine.ProviderPages
 import org.s0me0ne25.cellprobe.ui.apps.AppIcon
 import org.s0me0ne25.cellprobe.ui.apps.AppPickerDialog
 import org.s0me0ne25.cellprobe.ui.apps.actionRes
@@ -126,13 +125,9 @@ private fun ProviderPageButtons(urls: List<String>, sections: List<ListSection>)
         return
     }
     val context = LocalContext.current
-    val labels = ProviderPageLabels.labels(urls)
-    val rows = sections.firstOrNull { it.id == CheckListId.PROVIDER }?.rows
-    urls.forEachIndexed { index, url ->
-        // Rows follow the list order, unless the list changed since the check.
-        val responded = rows?.takeIf { it.size == urls.size }?.get(index)?.outcome?.code?.reachable == true
-        ActionButton(primary = index == 0, onClick = { context.openUrl(url) }) {
-            Text(if (responded) "✅ ${labels[index]}" else labels[index], maxLines = 1, overflow = TextOverflow.Ellipsis)
+    ProviderPages.of(urls, sections).forEachIndexed { index, page ->
+        ActionButton(primary = index == 0, onClick = { context.openUrl(page.url) }) {
+            Text(if (page.responded) "✅ ${page.label}" else page.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

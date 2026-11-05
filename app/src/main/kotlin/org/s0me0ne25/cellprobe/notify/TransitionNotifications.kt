@@ -4,20 +4,20 @@ package org.s0me0ne25.cellprobe.notify
 
 import android.Manifest
 import android.app.Notification
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import org.s0me0ne25.cellprobe.MainActivity
 import org.s0me0ne25.cellprobe.R
 import org.s0me0ne25.cellprobe.core.NetworkStatus
+import org.s0me0ne25.cellprobe.core.actions.AppRole
+import org.s0me0ne25.cellprobe.core.actions.StatusActions
 import org.s0me0ne25.cellprobe.core.stabilizer.Notice
 import org.s0me0ne25.cellprobe.core.stabilizer.Volume
+import org.s0me0ne25.cellprobe.engine.ProviderPage
 import org.s0me0ne25.cellprobe.ui.descriptionRes
 import org.s0me0ne25.cellprobe.ui.labelRes
 import org.s0me0ne25.cellprobe.ui.titleRes
@@ -27,19 +27,26 @@ import org.s0me0ne25.cellprobe.ui.titleRes
  * under one ID, each replacing the previous one. Loud ones go to the
  * "Important changes" channel, the others to "Status changes"; silent
  * updates alert no one. The lock screen shows only the status.
+ *
+ * A tap acts on the status (spec §7.3): the app of its role, the provider
+ * pages window, a settings screen; for UNSTABLE, on the strictest status of
+ * the window. "VLESS blocked" has buttons for both of its apps, "Pay for
+ * your connection" lists the provider pages (spec §7.4) and has a button for
+ * each, if there are at most three.
  */
 class TransitionNotifications(context: Context) {
 
     private val appContext = context.applicationContext
     private val manager = NotificationManagerCompat.from(appContext)
 
-    fun show(notice: Notice) {
+    /** @param pages the provider pages, marked by the check that found [notice]. */
+    fun show(notice: Notice, pages: List<ProviderPage>) {
         val allowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(appContext, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED
         if (!allowed) return
         createChannels()
-        manager.notify(ID, build(notice))
+        manager.notify(ID, build(notice, pages))
     }
 
     fun cancel() {
@@ -58,7 +65,7 @@ class TransitionNotifications(context: Context) {
         manager.createNotificationChannelsCompat(listOf(loud, normal))
     }
 
-    private fun build(notice: Notice): Notification {
+    private fun build(notice: Notice, pages: List<ProviderPage>): Notification {
         val (title, text) = when (notice) {
             is Notice.StatusChanged -> appContext.getString(notice.status.titleRes()) to notice.status.description()
             is Notice.Unstable -> appContext.getString(R.string.notification_unstable_title) to
@@ -68,11 +75,13 @@ class TransitionNotifications(context: Context) {
                 appContext.getString(notice.status.titleRes()),
             ) to notice.status.description()
         }
-        val networkType = when (notice) {
-            is Notice.StatusChanged -> notice.networkType
-            is Notice.Stabilized -> notice.networkType
-            is Notice.Unstable -> null
+        // What a tap acts on, and whether the status gets its own buttons and page list.
+        val (actedOn, actedNetwork, full) = when (notice) {
+            is Notice.StatusChanged -> Triple(notice.status, notice.networkType, true)
+            is Notice.Stabilized -> Triple(notice.status, notice.networkType, true)
+            is Notice.Unstable -> Triple(notice.strictest, notice.networkType, false)
         }
+        val actions = StatusActions.forStatus(actedOn, actedNetwork)
         val loud = notice.volume == Volume.LOUD
         val channel = if (loud) CHANNEL_LOUD else CHANNEL_NORMAL
         val priority = if (loud) NotificationCompat.PRIORITY_HIGH else NotificationCompat.PRIORITY_DEFAULT
@@ -84,13 +93,21 @@ class TransitionNotifications(context: Context) {
             .setPriority(priority)
             .build()
 
-        return NotificationCompat.Builder(appContext, channel)
+        val showPages = full && actedOn == NetworkStatus.PAY && pages.isNotEmpty()
+        val style = if (showPages) {
+            NotificationCompat.InboxStyle().also { inbox ->
+                pages.forEach { page -> inbox.addLine(if (page.responded) "✅ ${page.label}" else page.label) }
+            }
+        } else {
+            text?.let { NotificationCompat.BigTextStyle().bigText(it) }
+        }
+        val builder = NotificationCompat.Builder(appContext, channel)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(text)
-            .setStyle(text?.let { NotificationCompat.BigTextStyle().bigText(it) })
-            .setSubText(networkType?.let { appContext.getString(it.labelRes()) })
-            .setContentIntent(openApp())
+            .setStyle(style)
+            .setSubText(actedNetwork?.let { appContext.getString(it.labelRes()) })
+            .setContentIntent(NotificationTarget.of(actions.firstOrNull()).pendingIntent(appContext, REQUEST_CONTENT))
             .setAutoCancel(true)
             .setPriority(priority)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
@@ -100,8 +117,23 @@ class TransitionNotifications(context: Context) {
             // API 24-25 have no channels: sound and vibration come with the notification.
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setSilent(notice.volume == Volume.SILENT)
-            .build()
+        if (full) buttons(actedOn, pages).forEachIndexed { index, (label, target) ->
+            builder.addAction(0, label, target.pendingIntent(appContext, REQUEST_BUTTON + index))
+        }
+        return builder.build()
     }
+
+    /** Buttons of [status] (spec §7.3, §7.4): label and target. */
+    private fun buttons(status: NetworkStatus, pages: List<ProviderPage>): List<Pair<String, NotificationTarget>> =
+        when (status) {
+            NetworkStatus.VLESS_BLOCKED -> listOf(
+                appContext.getString(R.string.notification_action_i2p) to NotificationTarget.Role(AppRole.I2P),
+                appContext.getString(R.string.notification_action_vpn_client) to NotificationTarget.Role(AppRole.VPN_CLIENT),
+            )
+            NetworkStatus.PAY ->
+                if (pages.size <= MAX_PAGE_BUTTONS) pages.map { it.label to NotificationTarget.Url(it.url) } else emptyList()
+            else -> emptyList()
+        }
 
     private fun NetworkStatus.description(): String? = descriptionRes()?.let(appContext::getString)
 
@@ -112,16 +144,13 @@ class TransitionNotifications(context: Context) {
         return titles.dropLast(1).joinToString(", ") + appContext.getString(R.string.list_last_separator) + titles.last()
     }
 
-    // Spec §7.3 actions come in step 11; until then the app opens.
-    private fun openApp(): PendingIntent = PendingIntent.getActivity(
-        appContext,
-        0,
-        Intent(appContext, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-    )
-
     private companion object {
         const val ID = 2
+        const val REQUEST_CONTENT = 0
+        const val REQUEST_BUTTON = 1
+
+        /** With more pages, the buttons would not fit: the window lists them all. */
+        const val MAX_PAGE_BUTTONS = 3
         const val CHANNEL_LOUD = "changes_important"
         const val CHANNEL_NORMAL = "changes"
     }

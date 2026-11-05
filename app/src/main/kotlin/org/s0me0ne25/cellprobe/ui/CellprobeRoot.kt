@@ -4,11 +4,13 @@ package org.s0me0ne25.cellprobe.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
+import org.s0me0ne25.cellprobe.core.actions.AppRole
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.ui.diagnostics.DiagnosticsScreen
 import org.s0me0ne25.cellprobe.ui.journal.JournalScreen
@@ -53,10 +55,21 @@ private val BackStackSaver = listSaver<SnapshotStateList<Screen>, String>(
     restore = { routes -> routes.map(::screenFromRoute).toMutableStateList() },
 )
 
-/** Minimal back stack navigation: a list of screens, the last one is shown. */
+/**
+ * Minimal back stack navigation: a list of screens, the last one is shown.
+ *
+ * @param pickRole a role whose app the user is to choose: the settings
+ *   open with the choice; [onPickRoleShown] is called once it is shown.
+ */
 @Composable
-fun CellprobeRoot() {
+fun CellprobeRoot(pickRole: AppRole? = null, onPickRoleShown: () -> Unit = {}) {
     val backStack = rememberSaveable(saver = BackStackSaver) { mutableStateListOf<Screen>(Screen.Main) }
+    LaunchedEffect(pickRole) {
+        if (pickRole != null && backStack.last() != Screen.Settings) {
+            backStack.clear()
+            backStack.addAll(listOf(Screen.Main, Screen.Settings))
+        }
+    }
     // removeAt instead of removeLast: the latter is a Java 21 API missing on older Android.
     val navigateBack: () -> Unit = { if (backStack.size > 1) backStack.removeAt(backStack.lastIndex) }
 
@@ -70,6 +83,8 @@ fun CellprobeRoot() {
         )
         Screen.Settings -> SettingsScreen(
             onBack = navigateBack,
+            requestedPickerRole = pickRole,
+            onPickerRequestShown = onPickRoleShown,
             onOpenList = { backStack.add(Screen.ResourceListEditor(it)) },
             onOpenVless = { backStack.add(Screen.VlessEditor) },
         )

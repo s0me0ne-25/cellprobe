@@ -14,7 +14,11 @@ import org.s0me0ne25.cellprobe.core.actions.SettingsScreen
 
 /** Starting other apps and system screens for status actions (spec §7.3). */
 
-/** Opens [screen]; falls back to the general settings where a vendor build lacks it. */
+/**
+ * Opens [screen]; falls back to the general settings where a vendor build
+ * lacks it. Screens and pages open in a task of their own: they may be
+ * started from a notification, by an activity that finishes at once.
+ */
 fun Context.openSettings(screen: SettingsScreen) {
     val action = when (screen) {
         SettingsScreen.WIFI -> Settings.ACTION_WIFI_SETTINGS
@@ -22,11 +26,14 @@ fun Context.openSettings(screen: SettingsScreen) {
         SettingsScreen.MOBILE_NETWORK -> Settings.ACTION_DATA_ROAMING_SETTINGS
         SettingsScreen.NETWORK -> Settings.ACTION_WIRELESS_SETTINGS
     }
-    if (!tryStart(Intent(action))) tryStart(Intent(Settings.ACTION_SETTINGS))
+    if (!tryStart(Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))) {
+        tryStart(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }
 }
 
 /** Opens [url] in the default browser or lets the user choose one. Returns false if nothing can open it. */
-fun Context.openUrl(url: String): Boolean = tryStart(Intent(Intent.ACTION_VIEW, url.toUri()))
+fun Context.openUrl(url: String): Boolean =
+    tryStart(Intent(Intent.ACTION_VIEW, url.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 
 /** Starts [intent]; returns false if no activity can handle it. */
 fun Context.tryStart(intent: Intent): Boolean = try {

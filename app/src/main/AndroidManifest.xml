@@ -64,6 +64,26 @@
         </activity>
 
         <!--
+            Between a notification and what it opens (spec §7.3); invisible,
+            in a task of its own that disappears with it.
+        -->
+        <activity
+            android:name=".notify.NotificationActionActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Cellprobe.Transparent" />
+
+        <!-- The provider pages window over the current screen (spec §7.4). -->
+        <activity
+            android:name=".ui.pages.ProviderPagesActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/Theme.Cellprobe.Transparent" />
+
+        <!--
             specialUse: periodic network checks for the user, which fit none
             of the typed foreground service categories; dataSync is limited to
             6 hours a day on Android 15+ (spec §8).

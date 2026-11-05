@@ -124,6 +124,14 @@ class StabilizerTest {
     }
 
     @Test
+    fun `the strictest status ranks leak lowest and prefers the last of equals`() {
+        assertEquals(NORMAL, Stabilizer.strictest(listOf(LEAK, NORMAL, LEAK)))
+        assertEquals(AUTH_REQUIRED, Stabilizer.strictest(listOf(PAY, AUTH_REQUIRED)))
+        assertEquals(PAY, Stabilizer.strictest(listOf(AUTH_REQUIRED, PAY)))
+        assertEquals(NO_INTERNET, Stabilizer.strictest(listOf(NO_INTERNET, WHITELIST)))
+    }
+
+    @Test
     fun `standard blocking with and without VLESS is one status`() {
         val run = Run(NORMAL)
         val decision = run.after(3.minutes).check(NORMAL_NO_VLESS)
@@ -186,11 +194,14 @@ class StabilizerTest {
         assertEquals(Volume.NORMAL, run.after(1.minutes).change(WHITELIST)?.volume)
 
         val unstable = run.after(1.minutes).change(NORMAL)
-        assertEquals(Notice.Unstable(listOf(NORMAL, WHITELIST), Volume.LOUD), unstable)
+        assertEquals(Notice.Unstable(listOf(NORMAL, WHITELIST), MOBILE, Volume.LOUD), unstable)
+        assertEquals(WHITELIST, (unstable as Notice.Unstable).strictest)
         assertTrue(run.state.unstable)
 
         val update = run.after(1.minutes).change(PAY)
-        assertEquals(Notice.Unstable(listOf(NORMAL, WHITELIST, PAY), Volume.SILENT), update)
+        assertEquals(Notice.Unstable(listOf(NORMAL, WHITELIST, PAY), MOBILE, Volume.SILENT), update)
+        // PAY is stricter than WHITELIST.
+        assertEquals(PAY, (update as Notice.Unstable).strictest)
 
         // Not yet 15 minutes without a change.
         run.after(14.minutes).check(PAY)

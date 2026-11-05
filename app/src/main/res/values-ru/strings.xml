@@ -3,6 +3,7 @@
     <!-- Common actions -->
     <string name="action_back">Назад</string>
     <string name="action_cancel">Отмена</string>
+    <string name="action_close">Закрыть</string>
     <string name="action_delete">Удалить</string>
     <string name="action_reset">Сбросить</string>
     <string name="action_save">Сохранить</string>
@@ -208,6 +209,8 @@
     <string name="quoted">«%1$s»</string>
     <string name="notification_stabilized_title">Сеть стабилизировалась: %1$s</string>
     <string name="list_last_separator">" и "</string>
+    <string name="notification_action_i2p">I2P</string>
+    <string name="notification_action_vpn_client">VPN-клиент</string>
     <string name="settings_section_monitoring">Мониторинг</string>
     <string name="monitoring_enabled">Фоновый мониторинг</string>
     <string name="monitoring_enabled_description">Проверяет сеть сам и показывает состояние в уведомлении.</string>

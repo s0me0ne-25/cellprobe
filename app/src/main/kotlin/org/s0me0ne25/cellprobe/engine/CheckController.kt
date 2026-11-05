@@ -247,7 +247,7 @@ class CheckController(
             // The check itself succeeded; a full disk must not turn it into a failure.
         }
         try {
-            tracker.onCheckFinished(result)
+            tracker.onCheckFinished(result, sections)
         } catch (_: IOException) {
             // Without its stored state the stabilizer skips this check; the next one tries again.
         }

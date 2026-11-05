@@ -83,8 +83,10 @@ class AppContainer(context: Context) {
         StabilizerStore(dataStore)
     }
 
+    val transitionNotifications: TransitionNotifications by lazy { TransitionNotifications(appContext) }
+
     val statusTracker: StatusTracker by lazy {
-        StatusTracker(stabilizerStore, settingsRepository, TransitionNotifications(appContext))
+        StatusTracker(stabilizerStore, settingsRepository, transitionNotifications)
     }
 
     /** The check shared by all screens of the process. */

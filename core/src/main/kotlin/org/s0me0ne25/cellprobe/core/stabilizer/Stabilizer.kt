@@ -73,7 +73,14 @@ sealed interface Notice {
     ) : Notice
 
     /** The network keeps switching between [statuses], in the order they appeared. */
-    data class Unstable(val statuses: List<NetworkStatus>, override val volume: Volume) : Notice
+    data class Unstable(
+        val statuses: List<NetworkStatus>,
+        val networkType: NetworkType?,
+        override val volume: Volume,
+    ) : Notice {
+        /** The status the notification acts on (spec §7.3): the strictest of the window. */
+        val strictest: NetworkStatus get() = Stabilizer.strictest(statuses)
+    }
 
     /** UNSTABLE is over: [status] has held. */
     data class Stabilized(val status: NetworkStatus, val networkType: NetworkType?) : Notice {
@@ -136,17 +143,18 @@ object Stabilizer {
             candidate == null ->
                 Decision(current.copy(candidate = Candidate(status, network, 1, listOf(status))), RECHECK_DELAY)
             sameMode(candidate.status, status) -> confirm(current.copy(candidate = null), status, network, now)
-            candidate.rechecks >= MAX_RECHECKS -> {
-                val strictest = (candidate.seen + status).withIndex()
-                    .maxWith(compareBy({ rank(it.value) }, { it.index })).value
-                confirm(current.copy(candidate = null), strictest, network, now)
-            }
+            candidate.rechecks >= MAX_RECHECKS ->
+                confirm(current.copy(candidate = null), strictest(candidate.seen + status), network, now)
             else -> Decision(
                 current.copy(candidate = Candidate(status, network, candidate.rechecks + 1, candidate.seen + status)),
                 RECHECK_DELAY,
             )
         }
     }
+
+    /** The strictest of [statuses] (see [rank]); of equally strict ones, the last. */
+    fun strictest(statuses: List<NetworkStatus>): NetworkStatus =
+        statuses.withIndex().maxWith(compareBy({ rank(it.value) }, { it.index })).value
 
     /** "Same mode" for the user: standard blocking with and without VLESS entries configured. */
     fun sameMode(a: NetworkStatus?, b: NetworkStatus?): Boolean = a != null && b != null && group(a) == group(b)
@@ -224,12 +232,12 @@ object Stabilizer {
         )
 
         if (counted.unstable) {
-            return Decision(counted, notice = Notice.Unstable(statusesOf(transitions), Volume.SILENT))
+            return Decision(counted, notice = Notice.Unstable(statusesOf(transitions), network, Volume.SILENT))
         }
         if (transitions.size >= FLAPPING_TRANSITIONS) {
             return Decision(
                 counted.copy(unstable = true, lastLoudMillis = now),
-                notice = Notice.Unstable(statusesOf(transitions), Volume.LOUD),
+                notice = Notice.Unstable(statusesOf(transitions), network, Volume.LOUD),
             )
         }
 
