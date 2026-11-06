@@ -164,6 +164,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenList: (ResourceListId) -> Unit,
     onOpenVless: () -> Unit,
+    onOpenConfig: () -> Unit,
     requestedPickerRole: AppRole? = null,
     onPickerRequestShown: () -> Unit = {},
     viewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory),
@@ -201,6 +202,9 @@ fun SettingsScreen(
             }
             item(key = "journal") {
                 JournalSection(detailed = loaded.detailedJournal, onDetailedChange = viewModel::setDetailedJournal)
+            }
+            item(key = "config") {
+                ConfigSection(onOpen = onOpenConfig)
             }
             item {
                 Text(
@@ -392,6 +396,25 @@ private fun JournalSection(detailed: Boolean, onDetailedChange: (Boolean) -> Uni
             supportingContent = { Text(stringResource(R.string.journal_detailed_description)) },
             trailingContent = { Switch(checked = detailed, onCheckedChange = null) },
             modifier = Modifier.toggleable(value = detailed, role = Role.Switch, onValueChange = onDetailedChange),
+        )
+        HorizontalDivider()
+    }
+}
+
+/** Export and import of the whole configuration (spec §9.5). */
+@Composable
+private fun ConfigSection(onOpen: () -> Unit) {
+    Column {
+        Text(
+            text = stringResource(R.string.settings_section_config),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+        )
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.config_title)) },
+            supportingContent = { Text(stringResource(R.string.config_section_description)) },
+            modifier = Modifier.clickable(onClick = onOpen),
         )
         HorizontalDivider()
     }

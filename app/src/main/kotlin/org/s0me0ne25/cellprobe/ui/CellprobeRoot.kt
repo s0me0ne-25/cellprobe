@@ -12,6 +12,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import org.s0me0ne25.cellprobe.core.actions.AppRole
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
+import org.s0me0ne25.cellprobe.ui.config.ConfigScreen
 import org.s0me0ne25.cellprobe.ui.diagnostics.DiagnosticsScreen
 import org.s0me0ne25.cellprobe.ui.journal.JournalScreen
 import org.s0me0ne25.cellprobe.ui.lists.ResourceListEditorScreen
@@ -27,6 +28,7 @@ sealed interface Screen {
     data object VlessEditor : Screen
     data object Diagnostics : Screen
     data object Journal : Screen
+    data object Config : Screen
 }
 
 private fun Screen.toRoute(): String = when (this) {
@@ -36,6 +38,7 @@ private fun Screen.toRoute(): String = when (this) {
     Screen.VlessEditor -> "vless"
     Screen.Diagnostics -> "check"
     Screen.Journal -> "journal"
+    Screen.Config -> "config"
 }
 
 private fun screenFromRoute(route: String): Screen = when {
@@ -43,6 +46,7 @@ private fun screenFromRoute(route: String): Screen = when {
     route == "vless" -> Screen.VlessEditor
     route == "check" -> Screen.Diagnostics
     route == "journal" -> Screen.Journal
+    route == "config" -> Screen.Config
     route.startsWith("list/") ->
         ResourceListId.entries.firstOrNull { it.name == route.removePrefix("list/") }
             ?.let { Screen.ResourceListEditor(it) }
@@ -87,6 +91,7 @@ fun CellprobeRoot(pickRole: AppRole? = null, onPickRoleShown: () -> Unit = {}) {
             onPickerRequestShown = onPickRoleShown,
             onOpenList = { backStack.add(Screen.ResourceListEditor(it)) },
             onOpenVless = { backStack.add(Screen.VlessEditor) },
+            onOpenConfig = { backStack.add(Screen.Config) },
         )
         is Screen.ResourceListEditor -> ResourceListEditorScreen(
             listId = screen.listId,
@@ -95,5 +100,6 @@ fun CellprobeRoot(pickRole: AppRole? = null, onPickRoleShown: () -> Unit = {}) {
         Screen.VlessEditor -> VlessEditorScreen(onBack = navigateBack)
         Screen.Diagnostics -> DiagnosticsScreen(onBack = navigateBack)
         Screen.Journal -> JournalScreen(onBack = navigateBack)
+        Screen.Config -> ConfigScreen(onBack = navigateBack)
     }
 }

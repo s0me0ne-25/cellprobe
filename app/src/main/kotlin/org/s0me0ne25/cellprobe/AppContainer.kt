@@ -21,6 +21,7 @@ import org.s0me0ne25.cellprobe.core.journal.TrafficTotals
 import org.s0me0ne25.cellprobe.core.stabilizer.StabilizerState
 import org.s0me0ne25.cellprobe.data.AppSettings
 import org.s0me0ne25.cellprobe.data.AppSettingsSerializer
+import org.s0me0ne25.cellprobe.data.ConfigTransfer
 import org.s0me0ne25.cellprobe.data.JournalStore
 import org.s0me0ne25.cellprobe.data.RussianStateCaStore
 import org.s0me0ne25.cellprobe.data.SettingsRepository
@@ -31,6 +32,7 @@ import org.s0me0ne25.cellprobe.data.TrafficTotalsSerializer
 import org.s0me0ne25.cellprobe.engine.CheckController
 import org.s0me0ne25.cellprobe.engine.ManualCheckRunner
 import org.s0me0ne25.cellprobe.engine.MonitoringAlarm
+import org.s0me0ne25.cellprobe.engine.MonitoringService
 import org.s0me0ne25.cellprobe.engine.StatusTracker
 import org.s0me0ne25.cellprobe.notify.TransitionNotifications
 import org.s0me0ne25.cellprobe.probe.ProbeClientFactory
@@ -132,6 +134,17 @@ class AppContainer(context: Context) {
 
     val statusTracker: StatusTracker by lazy {
         StatusTracker(stabilizerStore, settingsRepository, transitionNotifications)
+    }
+
+    /** Export and import of the whole configuration (spec §9.5). */
+    val configTransfer: ConfigTransfer by lazy {
+        ConfigTransfer(
+            settings = settingsRepository,
+            traffic = trafficStore,
+            russianStateCa = russianStateCaStore,
+            appVersion = BuildConfig.VERSION_NAME,
+            onImported = { settings -> MonitoringService.sync(appContext, settings.monitoring.enabled) },
+        )
     }
 
     /** The check shared by all screens of the process. */

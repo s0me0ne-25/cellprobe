@@ -71,6 +71,26 @@ class RussianStateCaStore(
         withContext(Dispatchers.IO) { store(files, keep = read().orEmpty()) }
     }
 
+    /**
+     * Replaces the certificates with [certificates] (configuration import),
+     * checked like a download; null removes them. False if rejected.
+     */
+    suspend fun replace(certificates: List<X509Certificate>?): Boolean = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            if (certificates == null) {
+                file.delete()
+                return@withContext true
+            }
+            val verified = RussianStateCa.verify(certificates) as? Verification.Verified ?: return@withContext false
+            try {
+                write(verified.all)
+                true
+            } catch (_: IOException) {
+                false
+            }
+        }
+    }
+
     /** Removes the certificates: no entry trusts them any more. */
     suspend fun delete() = mutex.withLock {
         withContext(Dispatchers.IO) { file.delete() }

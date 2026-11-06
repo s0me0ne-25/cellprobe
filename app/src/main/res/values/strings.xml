@@ -253,4 +253,30 @@
     <string name="ru_ca_unreadable_text">No certificate was found in the chosen files. Choose the root certificate (Russian Trusted Root CA) downloaded from gosuslugi.ru/crt.</string>
     <string name="ru_ca_wrong_root_title">Certificate rejected</string>
     <string name="ru_ca_wrong_root_text">The fingerprint of the certificate does not match the root certificate of the Russian state CA built into Cellprobe. Choose the root certificate (Russian Trusted Root CA) downloaded from gosuslugi.ru/crt.</string>
+    <!-- Export and import of the configuration (spec §9.5). -->
+    <string name="settings_section_config">Configuration</string>
+    <string name="config_title">Export and import</string>
+    <string name="config_section_description">Settings, lists, VLESS inbounds and unblocking apps in one text. To move to another phone or to reinstall without typing it all again.</string>
+    <string name="config_description">The text below is the whole configuration of Cellprobe. Copy it or save it to a file; to restore, paste it or open the file and tap “Import”. It contains the addresses of your servers: keep it to yourself.</string>
+    <string name="config_current">Current</string>
+    <string name="config_copy_all">Copy all</string>
+    <string name="config_paste">Paste</string>
+    <string name="config_clear">Clear</string>
+    <string name="config_save_file">Save to file</string>
+    <string name="config_open_file">Open file</string>
+    <string name="config_import">Import</string>
+    <string name="config_copied">Copied</string>
+    <string name="config_clipboard_empty">The clipboard is empty</string>
+    <string name="config_saved">Saved</string>
+    <string name="config_file_failed">Could not read or write the file</string>
+    <string name="config_file_too_large">The file is too large to be a configuration of Cellprobe</string>
+    <string name="config_imported">Configuration imported</string>
+    <string name="config_import_confirm_title">Import the configuration?</string>
+    <string name="config_import_confirm_text">What the text contains replaces the current settings, lists, VLESS inbounds and unblocking apps. This cannot be undone: export the current configuration first if you may need it.</string>
+    <string name="config_import_failed">Could not import</string>
+    <string name="config_error_not_config">This is not a configuration of Cellprobe.</string>
+    <string name="config_error_newer">The configuration comes from a newer version of Cellprobe. Update Cellprobe and try again.</string>
+    <string name="config_error_section">The “%1$s” section of the configuration is damaged. Nothing has been changed.</string>
+    <string name="config_error_ca">The certificates of the Russian state CA in the configuration do not match the fingerprint built into Cellprobe. Nothing has been changed.</string>
+    <string name="config_error_write">Could not save the imported configuration; part of it may have been applied.</string>
 </resources>

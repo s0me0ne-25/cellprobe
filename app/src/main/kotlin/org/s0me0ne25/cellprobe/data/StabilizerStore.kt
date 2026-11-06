@@ -6,6 +6,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.Serializer
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.s0me0ne25.cellprobe.core.NetworkStatus
@@ -28,6 +29,13 @@ class StabilizerStore(private val dataStore: DataStore<StabilizerState>) {
             Stabilizer.observe(state, observation, silent).also { decision = it }.state
         }
         return checkNotNull(decision)
+    }
+
+    suspend fun snapshot(): StabilizerState = dataStore.data.first()
+
+    /** Replaces the state (configuration import). */
+    suspend fun replace(state: StabilizerState) {
+        dataStore.updateData { state }
     }
 
     /** Forgets everything: the next check is a new baseline. */

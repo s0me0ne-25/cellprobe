@@ -5,6 +5,7 @@ package org.s0me0ne25.cellprobe.data
 import androidx.datastore.core.DataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import org.s0me0ne25.cellprobe.core.actions.AppRole
 import org.s0me0ne25.cellprobe.core.monitoring.MonitoringSettings
@@ -85,6 +86,13 @@ class SettingsRepository(private val dataStore: DataStore<AppSettings>) {
      * Applies [edit] to the current effective entries of list [id] atomically.
      * Returns the edit error, or null on success.
      */
+    suspend fun snapshot(): AppSettings = dataStore.data.first()
+
+    /** Replaces all settings (configuration import). */
+    suspend fun replace(settings: AppSettings) {
+        dataStore.updateData { settings }
+    }
+
     /** Whether any entry trusts the Russian state CA: its certificates are kept only while one does. */
     val anyAllowsRuCa: Flow<Boolean> = dataStore.data
         .map { settings ->

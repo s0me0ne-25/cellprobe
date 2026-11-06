@@ -6,6 +6,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.Serializer
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.s0me0ne25.cellprobe.core.journal.TrafficTotals
@@ -18,6 +19,13 @@ class TrafficStore(private val dataStore: DataStore<TrafficTotals>) {
 
     /** Stored totals; read them with [TrafficTotals.forDate] for the current date. */
     val totals: Flow<TrafficTotals> = dataStore.data
+
+    suspend fun snapshot(): TrafficTotals = dataStore.data.first()
+
+    /** Replaces the totals (configuration import). */
+    suspend fun replace(totals: TrafficTotals) {
+        dataStore.updateData { totals }
+    }
 
     suspend fun add(bytes: Long, today: LocalDate) {
         dataStore.updateData { it.add(bytes, today) }
