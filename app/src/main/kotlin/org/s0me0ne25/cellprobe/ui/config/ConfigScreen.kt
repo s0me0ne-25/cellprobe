@@ -48,6 +48,7 @@ import org.s0me0ne25.cellprobe.R
 import org.s0me0ne25.cellprobe.data.ConfigError
 import org.s0me0ne25.cellprobe.data.ConfigImportError
 import org.s0me0ne25.cellprobe.ui.components.BackButton
+import java.util.UUID
 
 /**
  * Export and import of the whole configuration (spec §9.5): one text,
@@ -66,6 +67,10 @@ fun ConfigScreen(
     var confirmImport by rememberSaveable { mutableStateOf(false) }
     var importError by remember { mutableStateOf<ConfigImportError?>(null) }
 
+    // The view model outlives the screen: each visit starts from the current configuration.
+    val visit = rememberSaveable { UUID.randomUUID().toString() }
+    LaunchedEffect(visit) { viewModel.onEnter(visit) }
+
     fun showMessage(text: String) {
         scope.launch { snackbarHostState.showSnackbar(text) }
     }
@@ -80,6 +85,7 @@ fun ConfigScreen(
         viewModel.events.collect { event ->
             when (event) {
                 ConfigEvent.Imported -> snackbarHostState.showSnackbar(messages.imported)
+                ConfigEvent.Opened -> confirmImport = true
                 is ConfigEvent.ImportFailed -> importError = event.error
                 ConfigEvent.Saved -> snackbarHostState.showSnackbar(messages.saved)
                 ConfigEvent.FileFailed -> snackbarHostState.showSnackbar(messages.fileFailed)

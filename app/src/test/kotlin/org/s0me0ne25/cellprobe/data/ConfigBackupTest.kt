@@ -4,6 +4,8 @@ package org.s0me0ne25.cellprobe.data
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNull
@@ -58,6 +60,45 @@ class ConfigBackupTest {
         assertEquals(full.settings, back.settings)
         assertEquals(full.traffic, back.traffic)
         assertEquals(full.russianStateCa?.map { it.encoded.toList() }, back.russianStateCa?.map { it.encoded.toList() })
+    }
+
+    @Test
+    fun `lists without the Russian state CA are written without its fields`() {
+        val withFlags = settings.copy(
+            resourceLists = settings.resourceLists + mapOf(
+                ResourceListId.FOREIGN to StoredResourceList(ruCaHosts = setOf("google.com")),
+                ResourceListId.BANNED to StoredResourceList(
+                    customized = true,
+                    entries = listOf(ResourceEntry("https://youtube.com", allowRuCa = true)),
+                ),
+            ),
+        )
+        val text = ConfigBackup.encode(ConfigSnapshot(settings = withFlags), appVersion = "0.0.1", exportedAt = "now")
+        val lists = (Json.parseToJsonElement(text) as JsonObject)["settings"]!!.jsonObject["resourceLists"]!!.jsonObject
+
+        assertEquals(listOf("customized", "entries"), lists["foreign"]!!.jsonObject.keys.toList())
+        val banned = lists["banned"]!!.jsonObject
+        assertEquals(listOf("customized", "entries"), banned.keys.toList())
+        assertEquals(listOf("url", "marker"), banned["entries"]!!.jsonArray.single().jsonObject.keys.toList())
+        // Lists 1 and provider pages keep them.
+        assertEquals("true", lists["provider"]!!.jsonObject["entries"]!!.jsonArray.single().jsonObject["allowRuCa"].toString())
+        assertEquals("[\"ya.ru\"]", lists["domestic"]!!.jsonObject["ruCaHosts"].toString())
+    }
+
+    @Test
+    fun `a file cannot turn the Russian state CA on where it is not allowed`() {
+        val text = """
+            {"format": "cellprobe-config", "version": 1, "settings": {"resourceLists": {
+                "foreign": {"ruCaHosts": ["google.com"]},
+                "banned": {"customized": true, "entries": [{"url": "https://youtube.com", "allowRuCa": true}]},
+                "provider": {"customized": true, "entries": [{"url": "https://lk.example.ru", "allowRuCa": true}]}
+            }}}
+        """.trimIndent()
+        val lists = snapshot(text).settings!!.resourceLists
+
+        assertEquals(StoredResourceList(), lists[ResourceListId.FOREIGN])
+        assertEquals(listOf(ResourceEntry("https://youtube.com")), lists[ResourceListId.BANNED]?.entries)
+        assertTrue(lists[ResourceListId.PROVIDER]!!.entries.single().allowRuCa)
     }
 
     @Test

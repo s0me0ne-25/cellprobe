@@ -12,8 +12,11 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import org.s0me0ne25.cellprobe.core.certs.RussianStateCa
 import org.s0me0ne25.cellprobe.core.journal.TrafficTotals
+import org.s0me0ne25.cellprobe.core.resources.ResourceListId
+import org.s0me0ne25.cellprobe.core.resources.withoutRuCa
 import java.security.MessageDigest
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
@@ -67,6 +70,12 @@ object ConfigBackup {
     private const val KEY_TRAFFIC = "traffic"
     private const val KEY_RUSSIAN_STATE_CA = "russianStateCa"
 
+    // Fields of AppSettings and StoredResourceList.
+    private const val KEY_RESOURCE_LISTS = "resourceLists"
+    private const val KEY_ENTRIES = "entries"
+    private const val KEY_RU_CA_HOSTS = "ruCaHosts"
+    private const val KEY_ALLOW_RU_CA = "allowRuCa"
+
     private val pretty = Json {
         prettyPrint = true
         encodeDefaults = true
@@ -83,7 +92,7 @@ object ConfigBackup {
             put(KEY_VERSION, JsonPrimitive(VERSION))
             put(KEY_APP_VERSION, JsonPrimitive(appVersion))
             put(KEY_EXPORTED_AT, JsonPrimitive(exportedAt))
-            snapshot.settings?.let { put(KEY_SETTINGS, pretty.encodeToJsonElement(AppSettings.serializer(), it)) }
+            snapshot.settings?.let { put(KEY_SETTINGS, encodeSettings(it)) }
             snapshot.traffic?.let { put(KEY_TRAFFIC, pretty.encodeToJsonElement(TrafficTotals.serializer(), it)) }
             snapshot.russianStateCa?.let { certificates ->
                 put(KEY_RUSSIAN_STATE_CA, JsonArray(certificates.map { JsonPrimitive(BASE64.encodeToString(it.encoded)) }))
@@ -119,7 +128,7 @@ object ConfigBackup {
         return try {
             ConfigDecodeResult.Success(
                 ConfigSnapshot(
-                    settings = section(KEY_SETTINGS, AppSettings.serializer()).getOrThrow(),
+                    settings = section(KEY_SETTINGS, AppSettings.serializer()).getOrThrow()?.withRuCaOnlyWhereAllowed(),
                     traffic = section(KEY_TRAFFIC, TrafficTotals.serializer()).getOrThrow(),
                     russianStateCa = russianStateCa(root[KEY_RUSSIAN_STATE_CA]),
                 ),
@@ -130,6 +139,39 @@ object ConfigBackup {
             ConfigDecodeResult.Failure(ConfigError.WrongRussianStateCa)
         }
     }
+
+    /**
+     * Lists that do not allow the Russian state CA (spec §2.3) are written
+     * without its fields at all: nothing to edit by hand in a shared file.
+     */
+    private fun encodeSettings(settings: AppSettings): JsonElement {
+        val encoded = pretty.encodeToJsonElement(AppSettings.serializer(), settings.withRuCaOnlyWhereAllowed()) as JsonObject
+        val lists = encoded[KEY_RESOURCE_LISTS] as? JsonObject ?: return encoded
+        val withoutRuCa = ResourceListId.entries.filterNot { it.allowsRuCa }.map(::listKey).toSet()
+        val cleaned = lists.mapValues { (key, list) ->
+            if (key in withoutRuCa && list is JsonObject) list.withoutRuCaFields() else list
+        }
+        return JsonObject(encoded + (KEY_RESOURCE_LISTS to JsonObject(cleaned)))
+    }
+
+    private fun JsonObject.withoutRuCaFields(): JsonObject {
+        val entries = (this[KEY_ENTRIES] as? JsonArray)?.map { entry ->
+            if (entry is JsonObject) JsonObject(entry - KEY_ALLOW_RU_CA) else entry
+        }
+        val cleaned = this - KEY_RU_CA_HOSTS
+        return JsonObject(if (entries == null) cleaned else cleaned + (KEY_ENTRIES to JsonArray(entries)))
+    }
+
+    /** The key of [id] in the JSON map of lists: its serial name. */
+    private fun listKey(id: ResourceListId): String =
+        pretty.encodeToJsonElement(ResourceListId.serializer(), id).jsonPrimitive.content
+
+    /**
+     * Whatever a file says, a list that does not allow the Russian state
+     * CA gets no flags: a shared configuration cannot turn it on there.
+     */
+    private fun AppSettings.withRuCaOnlyWhereAllowed(): AppSettings =
+        copy(resourceLists = resourceLists.mapValues { (id, list) -> if (id.allowsRuCa) list else list.withoutRuCa() })
 
     /** The certificates, checked against the pinned fingerprint; null if not in the file. */
     private fun russianStateCa(element: JsonElement?): List<X509Certificate>? {

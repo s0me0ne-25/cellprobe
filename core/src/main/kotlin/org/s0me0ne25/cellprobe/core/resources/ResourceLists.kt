@@ -96,14 +96,24 @@ data class ResourceListState(
     val customized: Boolean,
 )
 
+/** The same list with trust in the Russian state CA off for every entry. */
+fun StoredResourceList.withoutRuCa(): StoredResourceList =
+    copy(entries = entries.map { it.copy(allowRuCa = false) }, ruCaHosts = emptySet())
+
+/**
+ * What a stored list means. In a list that does not allow the Russian
+ * state CA ([ResourceListId.allowsRuCa]) stored flags are ignored,
+ * wherever they came from.
+ */
 fun StoredResourceList?.effectiveState(id: ResourceListId): ResourceListState {
+    val stored = if (id.allowsRuCa) this else this?.withoutRuCa()
     val preset = id.preset
-    return if (preset != null && (this == null || !customized)) {
-        val hosts = this?.ruCaHosts.orEmpty()
+    return if (preset != null && (stored == null || !stored.customized)) {
+        val hosts = stored?.ruCaHosts.orEmpty()
         val entries = if (hosts.isEmpty()) preset else preset.map { it.copy(allowRuCa = UrlNormalizer.host(it.url) in hosts) }
         ResourceListState(id, entries, customized = false)
     } else {
-        ResourceListState(id, this?.entries.orEmpty(), customized = preset != null)
+        ResourceListState(id, stored?.entries.orEmpty(), customized = preset != null)
     }
 }
 

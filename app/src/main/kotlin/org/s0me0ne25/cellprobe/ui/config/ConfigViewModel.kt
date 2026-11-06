@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +38,9 @@ data class ConfigUiState(
 /** One-shot results to show. */
 sealed interface ConfigEvent {
     data object Imported : ConfigEvent
+
+    /** A file was read into the text: ask whether to import it. */
+    data object Opened : ConfigEvent
     data class ImportFailed(val error: ConfigImportError) : ConfigEvent
     data object Saved : ConfigEvent
     data object FileFailed : ConfigEvent
@@ -54,19 +58,48 @@ class ConfigViewModel(
     private val eventChannel = Channel<ConfigEvent>(Channel.BUFFERED)
     val events: Flow<ConfigEvent> = eventChannel.receiveAsFlow()
 
-    init {
-        loadCurrent()
+    /** The visit of the screen the text was last filled for. */
+    private var visit: String? = null
+
+    /** The text was set by the user before the first visit was seen. */
+    private var touched = false
+
+    private var loading: Job? = null
+
+    /**
+     * Called each time the screen is entered. [visit] stays the same over a
+     * rotation and a process restart, so a text the user is working on is
+     * kept then; a new visit always starts from the current configuration,
+     * since the one shown last time may be outdated.
+     */
+    fun onEnter(visit: String) {
+        if (visit == this.visit) return
+        // A process restart while the file picker was open: the file came first.
+        val keep = this.visit == null && touched
+        this.visit = visit
+        touched = false
+        if (!keep) loadCurrent()
     }
 
     /** Fills the text with the current configuration. */
     fun loadCurrent() {
-        work {
+        loading?.cancel()
+        loading = work {
             val text = transfer.export()
             mutableState.update { it.copy(text = text) }
         }
     }
 
-    fun setText(text: String) = mutableState.update { it.copy(text = text) }
+    fun setText(text: String) {
+        userText()
+        mutableState.update { it.copy(text = text) }
+    }
+
+    /** What the user put in wins over a configuration still being read. */
+    private fun userText() {
+        loading?.cancel()
+        touched = true
+    }
 
     fun importText() {
         val text = mutableState.value.text
@@ -92,12 +125,18 @@ class ConfigViewModel(
         }
     }
 
+    /** Reads the file into the text, then asks whether to import it. */
     fun openFrom(uri: Uri) {
+        userText()
         work {
             when (val read = withContext(Dispatchers.IO) { read(uri) }) {
                 FileRead.Failed -> eventChannel.send(ConfigEvent.FileFailed)
                 FileRead.TooLarge -> eventChannel.send(ConfigEvent.TooLargeFile)
-                is FileRead.Text -> mutableState.update { it.copy(text = read.text) }
+                is FileRead.Text -> {
+                    loading?.cancel()
+                    mutableState.update { it.copy(text = read.text) }
+                    eventChannel.send(ConfigEvent.Opened)
+                }
             }
         }
     }
@@ -127,13 +166,18 @@ class ConfigViewModel(
         FileRead.Failed
     }
 
-    private fun work(block: suspend () -> Unit) {
+    /** Jobs started by [work] and not finished yet. */
+    private var running = 0
+
+    private fun work(block: suspend () -> Unit): Job {
+        running++
         mutableState.update { it.copy(busy = true) }
-        viewModelScope.launch {
+        return viewModelScope.launch {
             try {
                 block()
             } finally {
-                mutableState.update { it.copy(busy = false) }
+                running--
+                mutableState.update { it.copy(busy = running > 0) }
             }
         }
     }

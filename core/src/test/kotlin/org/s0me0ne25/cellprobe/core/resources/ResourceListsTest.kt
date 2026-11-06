@@ -226,6 +226,17 @@ class ResourceListsTest {
     }
 
     @Test
+    fun `stored flags of lists without the Russian state CA are ignored`() {
+        val foreign = ResourceListId.FOREIGN
+        val following = StoredResourceList(ruCaHosts = setOf("google.com"))
+        assertTrue(following.effectiveState(foreign).entries.none { it.allowRuCa })
+        val customized = StoredResourceList(customized = true, entries = listOf(ResourceEntry("https://google.com", allowRuCa = true)))
+        assertEquals(listOf(ResourceEntry("https://google.com")), customized.effectiveState(foreign).entries)
+        assertTrue(customized.effectiveState(ResourceListId.BANNED).entries.none { it.allowRuCa })
+        assertTrue(customized.effectiveState(ResourceListId.PROVIDER).entries.single().allowRuCa)
+    }
+
+    @Test
     fun `stored format uses stable names`() {
         val json = Json { encodeDefaults = true }
         val original = mapOf(
