@@ -27,11 +27,18 @@ class StatusActionsTest {
 
     @Test
     fun `settings follow the network type`() {
-        for (status in listOf(NetworkStatus.AUTH_REQUIRED, NetworkStatus.NO_INTERNET, NetworkStatus.NO_SIGNAL, NetworkStatus.VOICE_ONLY)) {
+        for (status in listOf(NetworkStatus.AUTH_REQUIRED, NetworkStatus.NO_INTERNET)) {
             assertEquals(listOf(OpenSettings(SettingsScreen.WIFI)), actions(status, NetworkType.WIFI), "$status")
             assertEquals(listOf(OpenSettings(SettingsScreen.MOBILE_NETWORK)), actions(status, NetworkType.MOBILE), "$status")
             assertEquals(listOf(OpenSettings(SettingsScreen.NETWORK)), actions(status, NetworkType.ETHERNET), "$status")
             assertEquals(listOf(OpenSettings(SettingsScreen.NETWORK)), actions(status, null), "$status")
+        }
+    }
+
+    @Test
+    fun `loss of the cellular network leads to the mobile network settings`() {
+        for (status in listOf(NetworkStatus.NO_SIGNAL, NetworkStatus.VOICE_ONLY)) {
+            assertEquals(listOf(OpenSettings(SettingsScreen.MOBILE_NETWORK)), actions(status, null), "$status")
         }
     }
 

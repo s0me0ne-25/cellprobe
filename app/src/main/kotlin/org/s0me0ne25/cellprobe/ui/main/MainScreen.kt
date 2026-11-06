@@ -118,12 +118,10 @@ private fun StatusCard(state: CheckState) {
                     style = MaterialTheme.typography.headlineSmall,
                     color = shown.status.tone().color(),
                 )
-                shown.status.descriptionRes()?.let { description ->
-                    Text(
-                        text = stringResource(description),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
+                Text(
+                    text = stringResource(shown.status.descriptionRes()),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
                 Text(
                     text = statusDetails(shown),
                     style = MaterialTheme.typography.bodyMedium,

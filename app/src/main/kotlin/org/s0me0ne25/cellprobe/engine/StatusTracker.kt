@@ -15,6 +15,7 @@ import org.s0me0ne25.cellprobe.core.NetworkStatus
 import org.s0me0ne25.cellprobe.core.NetworkType
 import org.s0me0ne25.cellprobe.core.resources.ResourceListId
 import org.s0me0ne25.cellprobe.core.stabilizer.Observation
+import org.s0me0ne25.cellprobe.core.stabilizer.Stabilizer
 import org.s0me0ne25.cellprobe.data.SettingsRepository
 import org.s0me0ne25.cellprobe.data.StabilizerStore
 import org.s0me0ne25.cellprobe.notify.TransitionNotifications
@@ -61,8 +62,10 @@ class StatusTracker(
 
     /** @param sections the results of the check, for the provider pages of a "Pay" notification. */
     suspend fun onCheckFinished(result: CheckResult, sections: List<ListSection>) {
-        if (!settings.monitoring.first().enabled) return
-        val decision = store.observe(Observation(result.status, result.networkType, result.finishedAtMillis))
+        val monitoring = settings.monitoring.first()
+        if (!monitoring.enabled) return
+        val silent = if (monitoring.trackSignalLoss) Stabilizer.ALWAYS_SILENT else Stabilizer.SILENT_WITHOUT_SIGNAL_TRACKING
+        val decision = store.observe(Observation(result.status, result.networkType, result.finishedAtMillis), silent)
         decision.recheckAfter?.let(mutableRechecks::tryEmit)
         val notice = decision.notice ?: return
         val urls = settings.resourceList(ResourceListId.PROVIDER).first().entries.map { it.url }

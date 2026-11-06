@@ -53,6 +53,8 @@
     <string name="status_no_internet_description">An outage on the provider’s side, heavy-handed regulator interference, or you are connected to a test access point or base station.</string>
     <string name="status_no_signal">No mobile network signal</string>
     <string name="status_voice_only">Voice only: mobile data does not connect</string>
+    <string name="status_no_signal_description">The phone sees no cellular network: out of coverage, in a basement or a lift, or the base stations around are turned off.</string>
+    <string name="status_voice_only_description">The phone is registered in the network and calls and SMS work, but mobile data does not connect: an outage at the operator or a shutdown in the area.</string>
     <string name="status_leak">Free internet</string>
     <string name="status_leak_description">Make sure Cellprobe is excluded from the VPN client. If it is, congratulations: your network is free of regulatory blocking.</string>
     <string name="status_user_offline">Turned off by the user</string>
@@ -220,6 +222,8 @@
     <string name="monitoring_enabled_description">Checks the network on its own and shows the status in a notification.</string>
     <string name="monitoring_interval_screen_on">Interval, screen on</string>
     <string name="monitoring_interval_screen_off">Interval, screen off</string>
+    <string name="monitoring_track_signal_loss">Track physical loss of the network</string>
+    <string name="monitoring_track_signal_loss_description">Normal when fishing, but in a city it may point to a shutdown.</string>
     <string name="permission_notifications_title">Status notification</string>
     <string name="permission_notifications_explanation">Monitoring shows the current network status in a persistent notification. Without this permission the checks still run, but the status is only visible in the app.</string>
     <string name="permission_notifications_missing">Notifications are off: the status is only visible in the app. Tap to allow.</string>

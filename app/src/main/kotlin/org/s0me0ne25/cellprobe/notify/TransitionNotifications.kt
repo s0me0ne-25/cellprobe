@@ -99,7 +99,7 @@ class TransitionNotifications(context: Context) {
                 pages.forEach { page -> inbox.addLine(if (page.responded) "✅ ${page.label}" else page.label) }
             }
         } else {
-            text?.let { NotificationCompat.BigTextStyle().bigText(it) }
+            NotificationCompat.BigTextStyle().bigText(text)
         }
         val builder = NotificationCompat.Builder(appContext, channel)
             .setSmallIcon(R.drawable.ic_notification)
@@ -135,7 +135,7 @@ class TransitionNotifications(context: Context) {
             else -> emptyList()
         }
 
-    private fun NetworkStatus.description(): String? = descriptionRes()?.let(appContext::getString)
+    private fun NetworkStatus.description(): String = appContext.getString(descriptionRes())
 
     /** "“A” and “B”", "“A”, “B” and “C”". */
     private fun statusList(statuses: List<NetworkStatus>): String {

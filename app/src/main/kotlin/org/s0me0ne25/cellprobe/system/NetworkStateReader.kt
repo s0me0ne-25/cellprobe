@@ -21,13 +21,20 @@ import org.s0me0ne25.cellprobe.core.NetworkType
 
 /**
  * Reads the system signals of spec §3: the active network and its
- * transport, the captive portal flag, airplane mode and mobile data.
- * No network requests and no dangerous permissions.
+ * transport, the captive portal flag, airplane mode and mobile data, and
+ * without an active network the cellular registration and roaming of the
+ * data SIM. No network requests and no dangerous permissions.
  */
 class NetworkStateReader(context: Context) {
 
     private val appContext = context.applicationContext
     private val connectivity = checkNotNull(appContext.getSystemService<ConnectivityManager>())
+    private val cellular = CellularStateReader(appContext)
+
+    /** Starts following the cellular network, so its state is known by the first check. */
+    fun start() {
+        cellular.read()
+    }
 
     fun read(): NetworkState {
         // The default network of this app: the physical network when
@@ -35,12 +42,18 @@ class NetworkStateReader(context: Context) {
         // capabilities then also carry the underlying transport).
         val network = connectivity.activeNetwork
         val capabilities = network?.let(connectivity::getNetworkCapabilities)
+        val activeNetwork = capabilities?.let(::transportOf)
+        // The cellular state matters only without an active network (NO_SIGNAL, VOICE_ONLY).
+        val cellularState = if (activeNetwork == null) cellular.read() else null
         return NetworkState(
             networkId = network?.networkHandle,
-            activeNetwork = capabilities?.let(::transportOf),
+            activeNetwork = activeNetwork,
             captivePortal = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_CAPTIVE_PORTAL) == true,
             airplaneMode = Settings.Global.getInt(appContext.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0,
             mobileDataEnabled = mobileDataEnabled(),
+            cellularService = cellularState?.service,
+            roaming = cellularState?.roaming == true,
+            dataRoamingEnabled = cellularState?.roaming != true || dataRoamingEnabled(),
         )
     }
 
@@ -94,6 +107,24 @@ class NetworkStateReader(context: Context) {
         val perSubscription = Settings.Global.getInt(resolver, "$MOBILE_DATA_SETTING$subscription", -1)
         if (perSubscription != -1) return perSubscription != 0
         return Settings.Global.getInt(resolver, MOBILE_DATA_SETTING, 1) != 0
+    }
+
+    /** Mobile data in roaming for the SIM chosen for data. */
+    private fun dataRoamingEnabled(): Boolean {
+        val subscription = SubscriptionManager.getDefaultDataSubscriptionId()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                // ACCESS_NETWORK_STATE is enough on recent versions; older ones demand READ_PHONE_STATE.
+                val telephony = appContext.getSystemService<TelephonyManager>()?.createForSubscriptionId(subscription)
+                if (telephony != null) return telephony.isDataRoamingEnabled
+            } catch (_: SecurityException) {
+                // Fall back to the setting.
+            }
+        }
+        val resolver = appContext.contentResolver
+        val perSubscription = Settings.Global.getInt(resolver, "${Settings.Global.DATA_ROAMING}$subscription", -1)
+        if (perSubscription != -1) return perSubscription != 0
+        return Settings.Global.getInt(resolver, Settings.Global.DATA_ROAMING, 0) != 0
     }
 
     private companion object {

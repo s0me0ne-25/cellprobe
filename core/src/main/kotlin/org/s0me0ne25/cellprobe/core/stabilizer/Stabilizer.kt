@@ -38,7 +38,7 @@ data class StabilizerState(
     val confirmedNetwork: NetworkType? = null,
     val observedAtMillis: Long? = null,
     val candidate: Candidate? = null,
-    /** The status of the last transition notification; never [NetworkStatus.USER_OFFLINE]. */
+    /** The status of the last transition notification; never a silent one, such as [NetworkStatus.USER_OFFLINE]. */
     val announced: NetworkStatus? = null,
     /** Network type the [transitions] were counted on. */
     val countedNetwork: NetworkType? = null,
@@ -117,34 +117,43 @@ object Stabilizer {
     /** A stricter status alerts loudly at most once in this period. */
     val LOUD_COOLDOWN: Duration = 10.minutes
 
-    fun observe(state: StabilizerState, observation: Observation): Decision {
+    /**
+     * @param silent statuses that are shown but never announced and never
+     *   count as flapping, like the user going offline; with "track physical
+     *   loss of the network" off, also NO_SIGNAL and VOICE_ONLY (spec §3).
+     */
+    fun observe(
+        state: StabilizerState,
+        observation: Observation,
+        silent: Set<NetworkStatus> = ALWAYS_SILENT,
+    ): Decision {
         val now = observation.timeMillis
         val current = state.copy(observedAtMillis = now)
         val confirmed = current.confirmed
-            ?: return Decision(baseline(current, observation))
+            ?: return Decision(baseline(current, observation, silent))
         val status = observation.status
         val network = observation.networkType
 
-        if (status in IMMEDIATE) return confirm(current.copy(candidate = null), status, network, now)
+        if (status in IMMEDIATE) return confirm(current.copy(candidate = null), status, network, now, silent)
 
-        // Back from USER_OFFLINE to the status announced before it: nothing to tell.
-        if (confirmed == NetworkStatus.USER_OFFLINE && sameMode(status, current.announced)) {
-            return confirm(current.copy(candidate = null), status, network, now)
+        // Back from a silent status to the status announced before it: nothing to tell.
+        if (confirmed in silent && sameMode(status, current.announced)) {
+            return confirm(current.copy(candidate = null), status, network, now, silent)
         }
 
         if (sameMode(status, confirmed)) {
             // A candidate, if any, was a one-off failure.
             val kept = current.copy(candidate = null, confirmed = status, confirmedNetwork = network)
-            return settle(kept, network, now)
+            return settle(kept, network, now, silent)
         }
 
         val candidate = current.candidate
         return when {
             candidate == null ->
                 Decision(current.copy(candidate = Candidate(status, network, 1, listOf(status))), RECHECK_DELAY)
-            sameMode(candidate.status, status) -> confirm(current.copy(candidate = null), status, network, now)
+            sameMode(candidate.status, status) -> confirm(current.copy(candidate = null), status, network, now, silent)
             candidate.rechecks >= MAX_RECHECKS ->
-                confirm(current.copy(candidate = null), strictest(candidate.seen + status), network, now)
+                confirm(current.copy(candidate = null), strictest(candidate.seen + status), network, now, silent)
             else -> Decision(
                 current.copy(candidate = Candidate(status, network, candidate.rechecks + 1, candidate.seen + status)),
                 RECHECK_DELAY,
@@ -173,9 +182,16 @@ object Stabilizer {
     /** Statuses accepted without a recheck: the system reports them itself. */
     private val IMMEDIATE = setOf(NetworkStatus.AUTH_REQUIRED, NetworkStatus.USER_OFFLINE)
 
+    /** The user turned the network off: never news. */
+    val ALWAYS_SILENT: Set<NetworkStatus> = setOf(NetworkStatus.USER_OFFLINE)
+
+    /** Silent statuses while "track physical loss of the network" is off (spec §3). */
+    val SILENT_WITHOUT_SIGNAL_TRACKING: Set<NetworkStatus> =
+        ALWAYS_SILENT + setOf(NetworkStatus.NO_SIGNAL, NetworkStatus.VOICE_ONLY)
+
     /** The first check: what the service notification shows from now on; nothing to announce. */
-    private fun baseline(state: StabilizerState, observation: Observation): StabilizerState {
-        val online = observation.status != NetworkStatus.USER_OFFLINE
+    private fun baseline(state: StabilizerState, observation: Observation, silent: Set<NetworkStatus>): StabilizerState {
+        val online = observation.status !in silent
         return state.copy(
             confirmed = observation.status,
             confirmedNetwork = observation.networkType,
@@ -193,35 +209,41 @@ object Stabilizer {
         }
 
     /** The status holds: UNSTABLE may end. */
-    private fun settle(state: StabilizerState, network: NetworkType?, now: Long): Decision {
+    private fun settle(state: StabilizerState, network: NetworkType?, now: Long, silent: Set<NetworkStatus>): Decision {
         val status = checkNotNull(state.confirmed)
         val switched = switchNetwork(state, network)
         val endedBySwitch = state.unstable && !switched.unstable
-        val calm = switched.unstable && switched.candidate == null && status != NetworkStatus.USER_OFFLINE &&
+        val calm = switched.unstable && switched.candidate == null && status !in silent &&
             now - (switched.lastTransitionMillis ?: now) >= STABLE_AFTER.inWholeMilliseconds
         if (!endedBySwitch && !calm) return Decision(switched)
         val stable = switched.copy(unstable = false, transitions = emptyList(), announced = status)
         return Decision(stable, notice = Notice.Stabilized(status, network))
     }
 
-    private fun confirm(state: StabilizerState, status: NetworkStatus, network: NetworkType?, now: Long): Decision {
+    private fun confirm(
+        state: StabilizerState,
+        status: NetworkStatus,
+        network: NetworkType?,
+        now: Long,
+        silent: Set<NetworkStatus>,
+    ): Decision {
         val previous = state.confirmed
         val confirmed = state.copy(confirmed = status, confirmedNetwork = network)
-        if (sameMode(status, previous)) return settle(confirmed, network, now)
-        // The user went offline: no notification, and it does not count as flapping.
-        if (status == NetworkStatus.USER_OFFLINE) return Decision(confirmed)
+        if (sameMode(status, previous)) return settle(confirmed, network, now, silent)
+        // The user went offline, say: no notification, and it does not count as flapping.
+        if (status in silent) return Decision(confirmed)
 
         val wasUnstable = confirmed.unstable
         val switched = switchNetwork(confirmed, network)
 
         if (sameMode(status, switched.announced)) {
-            // Back to what was announced (after USER_OFFLINE): only the end of UNSTABLE is news.
+            // Back to what was announced (after a silent status): only the end of UNSTABLE is news.
             val notice = if (wasUnstable && !switched.unstable) Notice.Stabilized(status, network) else null
             return Decision(switched.copy(announced = status), notice = notice)
         }
 
         val window = FLAPPING_WINDOW.inWholeMilliseconds
-        // After USER_OFFLINE the change is from the status announced before it.
+        // After a silent status the change is from the status announced before it.
         val from = switched.announced ?: checkNotNull(previous)
         val transitions = (switched.transitions + Transition(now, from, status))
             .filter { now - it.timeMillis < window }

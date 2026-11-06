@@ -92,8 +92,51 @@ class NetworkClassifierTest {
     }
 
     @Test
-    fun `no network with data on is no internet for now`() {
+    fun `no network and no registration state is no internet`() {
         assertEquals(NetworkStatus.NO_INTERNET, NetworkClassifier.classify(NetworkState(activeNetwork = null), null))
+        val radioOff = NetworkState(activeNetwork = null, cellularService = CellularService.POWER_OFF)
+        assertEquals(NetworkStatus.NO_INTERNET, NetworkClassifier.classify(radioOff, null))
+    }
+
+    @Test
+    fun `no network and no cellular service is no signal`() {
+        for (service in listOf(CellularService.OUT_OF_SERVICE, CellularService.EMERGENCY_ONLY)) {
+            val state = NetworkState(activeNetwork = null, cellularService = service)
+            assertFalse(NetworkClassifier.needsProbes(state))
+            assertEquals(NetworkStatus.NO_SIGNAL, NetworkClassifier.classify(state, null), "$service")
+        }
+    }
+
+    @Test
+    fun `no network while registered is voice only`() {
+        val state = NetworkState(activeNetwork = null, cellularService = CellularService.IN_SERVICE)
+        assertEquals(NetworkStatus.VOICE_ONLY, NetworkClassifier.classify(state, null))
+        assertEquals(NetworkStatus.VOICE_ONLY, NetworkClassifier.classify(state.copy(roaming = true), null))
+    }
+
+    @Test
+    fun `roaming with data roaming off is the user's choice`() {
+        val state = NetworkState(
+            activeNetwork = null,
+            cellularService = CellularService.IN_SERVICE,
+            roaming = true,
+            dataRoamingEnabled = false,
+        )
+        assertEquals(NetworkStatus.USER_OFFLINE, NetworkClassifier.classify(state, null))
+    }
+
+    @Test
+    fun `user settings win over the cellular state`() {
+        val noSignal = NetworkState(activeNetwork = null, cellularService = CellularService.OUT_OF_SERVICE)
+        assertEquals(NetworkStatus.USER_OFFLINE, NetworkClassifier.classify(noSignal.copy(airplaneMode = true), null))
+        assertEquals(NetworkStatus.USER_OFFLINE, NetworkClassifier.classify(noSignal.copy(mobileDataEnabled = false), null))
+    }
+
+    @Test
+    fun `an active network is probed whatever the cellular state`() {
+        val state = wifi.copy(cellularService = CellularService.OUT_OF_SERVICE)
+        assertTrue(NetworkClassifier.needsProbes(state))
+        assertEquals(NetworkStatus.NORMAL, NetworkClassifier.classify(state, lists('+', '+', '+', '-', '0')))
     }
 
     @Test

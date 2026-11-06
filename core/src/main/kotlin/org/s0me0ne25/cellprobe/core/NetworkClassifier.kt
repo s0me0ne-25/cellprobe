@@ -8,6 +8,21 @@ import org.s0me0ne25.cellprobe.core.probe.ListProbeResult
 /** Transport of the active network. */
 enum class NetworkType { WIFI, MOBILE, ETHERNET, OTHER }
 
+/** Registration of the data SIM in the cellular network, as the system reports it. */
+enum class CellularService {
+    /** Registered: calls work. */
+    IN_SERVICE,
+
+    /** Not registered anywhere: no coverage. */
+    OUT_OF_SERVICE,
+
+    /** Emergency calls only: no network of the operator. */
+    EMERGENCY_ONLY,
+
+    /** The radio is off. */
+    POWER_OFF,
+}
+
 /**
  * System signals read before a check, without network requests (spec §3).
  *
@@ -19,6 +34,9 @@ enum class NetworkType { WIFI, MOBILE, ETHERNET, OTHER }
  * @property networkId opaque number of the active network connection,
  *   new on every (re)connection; tells a network change from a
  *   capabilities update. Kept in memory only.
+ * @property cellularService registration of the data SIM, null if unknown.
+ * @property roaming the data SIM is roaming.
+ * @property dataRoamingEnabled mobile data is allowed in roaming.
  */
 data class NetworkState(
     val activeNetwork: NetworkType?,
@@ -26,6 +44,9 @@ data class NetworkState(
     val airplaneMode: Boolean = false,
     val mobileDataEnabled: Boolean = true,
     val networkId: Long? = null,
+    val cellularService: CellularService? = null,
+    val roaming: Boolean = false,
+    val dataRoamingEnabled: Boolean = true,
 )
 
 /**
@@ -72,13 +93,7 @@ object NetworkClassifier {
      *   ignored otherwise.
      */
     fun classify(state: NetworkState, lists: ListAvailability?): NetworkStatus {
-        if (state.activeNetwork == null) {
-            // Without a SIM or with data off there is nothing to monitor.
-            // Physical loss of service (NO_SIGNAL, VOICE_ONLY) is told apart
-            // from a dead connection in a later step; until then it is
-            // NO_INTERNET.
-            return if (state.airplaneMode || !state.mobileDataEnabled) NetworkStatus.USER_OFFLINE else NetworkStatus.NO_INTERNET
-        }
+        if (state.activeNetwork == null) return classifyWithoutNetwork(state)
         if (state.captivePortal) return NetworkStatus.AUTH_REQUIRED
 
         requireNotNull(lists) { "List results are required for an active network without a captive portal" }
@@ -89,6 +104,24 @@ object NetworkClassifier {
             lists.domestic -> NetworkStatus.WHITELIST
             lists.provider == true -> NetworkStatus.PAY
             else -> NetworkStatus.NO_INTERNET
+        }
+    }
+
+    /**
+     * No active network (spec §3): turned off by the user, or the cellular
+     * network is lost (NO_SIGNAL) or carries calls but no data (VOICE_ONLY).
+     * Roaming with data roaming off is the user's choice, not VOICE_ONLY.
+     * Without the registration state it is NO_INTERNET.
+     */
+    private fun classifyWithoutNetwork(state: NetworkState): NetworkStatus {
+        // Without a SIM or with data off there is nothing to monitor.
+        if (state.airplaneMode || !state.mobileDataEnabled) return NetworkStatus.USER_OFFLINE
+        return when (state.cellularService) {
+            CellularService.OUT_OF_SERVICE, CellularService.EMERGENCY_ONLY -> NetworkStatus.NO_SIGNAL
+            CellularService.IN_SERVICE ->
+                if (state.roaming && !state.dataRoamingEnabled) NetworkStatus.USER_OFFLINE else NetworkStatus.VOICE_ONLY
+            // The radio off without airplane mode is rare and says nothing about filtering.
+            CellularService.POWER_OFF, null -> NetworkStatus.NO_INTERNET
         }
     }
 }

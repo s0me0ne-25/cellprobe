@@ -31,6 +31,11 @@ data class MonitoringSettings(
     val enabled: Boolean = false,
     val screenOnIntervalSeconds: Long = DEFAULT_SCREEN_ON.inWholeSeconds,
     val screenOffIntervalSeconds: Long = DEFAULT_SCREEN_OFF.inWholeSeconds,
+    /**
+     * "Track physical loss of the network" (spec §3): NO_SIGNAL and
+     * VOICE_ONLY take part in notifications. Off, they are shown only.
+     */
+    val trackSignalLoss: Boolean = false,
 ) {
     val screenOnInterval: Duration
         get() = clamp(screenOnIntervalSeconds.seconds)

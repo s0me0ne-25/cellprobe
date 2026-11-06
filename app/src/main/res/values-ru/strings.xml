@@ -49,6 +49,8 @@
     <string name="status_no_internet_description">Авария на стороне провайдера, грубое вмешательство регулятора, или вы подключены к тестовой точке доступа / базовой станции.</string>
     <string name="status_no_signal">Нет сигнала мобильной сети</string>
     <string name="status_voice_only">Только голосовая связь, мобильный интернет не подключается</string>
+    <string name="status_no_signal_description">Телефон не видит сотовую сеть: вне зоны покрытия, в подвале или лифте — либо базовые станции вокруг отключены.</string>
+    <string name="status_voice_only_description">Телефон зарегистрирован в сети, звонки и SMS работают, но мобильный интернет не подключается: авария у оператора или его отключение в округе.</string>
     <string name="status_leak">Свободный интернет</string>
     <string name="status_leak_description">Убедитесь, что Cellprobe добавлен в исключения VPN-клиента. Если да, поздравляем — ваша сеть свободна от регуляторных блокировок.</string>
     <string name="status_user_offline">Отключено пользователем</string>
@@ -216,6 +218,8 @@
     <string name="monitoring_enabled_description">Проверяет сеть сам и показывает состояние в уведомлении.</string>
     <string name="monitoring_interval_screen_on">Интервал при включённом экране</string>
     <string name="monitoring_interval_screen_off">Интервал при выключенном экране</string>
+    <string name="monitoring_track_signal_loss">Отслеживать физическое пропадание сети</string>
+    <string name="monitoring_track_signal_loss_description">На рыбалке — вариант нормы, но в городе может указывать на шатдаун.</string>
     <string name="permission_notifications_title">Уведомление о статусе</string>
     <string name="permission_notifications_explanation">Мониторинг показывает текущий статус сети в постоянном уведомлении. Без этого разрешения проверки всё равно идут, но статус виден только в приложении.</string>
     <string name="permission_notifications_missing">Уведомления выключены: статус виден только в приложении. Нажмите, чтобы разрешить.</string>

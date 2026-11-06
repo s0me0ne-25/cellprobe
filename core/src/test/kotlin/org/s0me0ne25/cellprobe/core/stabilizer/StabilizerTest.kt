@@ -13,9 +13,11 @@ import org.s0me0ne25.cellprobe.core.NetworkStatus.LEAK
 import org.s0me0ne25.cellprobe.core.NetworkStatus.NORMAL
 import org.s0me0ne25.cellprobe.core.NetworkStatus.NORMAL_NO_VLESS
 import org.s0me0ne25.cellprobe.core.NetworkStatus.NO_INTERNET
+import org.s0me0ne25.cellprobe.core.NetworkStatus.NO_SIGNAL
 import org.s0me0ne25.cellprobe.core.NetworkStatus.PAY
 import org.s0me0ne25.cellprobe.core.NetworkStatus.USER_OFFLINE
 import org.s0me0ne25.cellprobe.core.NetworkStatus.VLESS_BLOCKED
+import org.s0me0ne25.cellprobe.core.NetworkStatus.VOICE_ONLY
 import org.s0me0ne25.cellprobe.core.NetworkStatus.WHITELIST
 import org.s0me0ne25.cellprobe.core.NetworkType
 import org.s0me0ne25.cellprobe.core.NetworkType.MOBILE
@@ -28,7 +30,11 @@ import kotlin.time.Duration.Companion.minutes
 class StabilizerTest {
 
     /** Feeds checks to the stabilizer, keeping the state and the virtual time. */
-    private class Run(start: NetworkStatus = NORMAL, network: NetworkType? = MOBILE) {
+    private class Run(
+        start: NetworkStatus = NORMAL,
+        network: NetworkType? = MOBILE,
+        val silent: Set<NetworkStatus> = Stabilizer.ALWAYS_SILENT,
+    ) {
         var now = 0L
         var state = StabilizerState()
         val notices = mutableListOf<Notice>()
@@ -39,7 +45,7 @@ class StabilizerTest {
         }
 
         fun check(status: NetworkStatus, network: NetworkType? = MOBILE): Decision {
-            val decision = Stabilizer.observe(state, Observation(status, network.takeIf { status != USER_OFFLINE }, now))
+            val decision = Stabilizer.observe(state, Observation(status, network.takeIf { status != USER_OFFLINE }, now), silent)
             state = decision.state
             decision.notice?.let(notices::add)
             lastDecision = decision
@@ -173,6 +179,31 @@ class StabilizerTest {
         val notice = run.after(10.minutes).change(WHITELIST)
         assertEquals(Notice.StatusChanged(WHITELIST, MOBILE, Volume.LOUD), notice)
         assertEquals(listOf(Transition(run.now, NORMAL, WHITELIST)), run.state.transitions)
+    }
+
+    @Test
+    fun `without signal tracking loss of the cellular network is shown but silent`() {
+        val run = Run(WHITELIST, silent = Stabilizer.SILENT_WITHOUT_SIGNAL_TRACKING)
+        run.after(3.minutes).change(NO_SIGNAL, null)
+        assertEquals(NO_SIGNAL, run.state.confirmed)
+        assertEquals(WHITELIST, run.state.announced)
+        assertTrue(run.notices.isEmpty())
+
+        // Back to what was announced: at once and silently.
+        val back = run.after(10.minutes).check(WHITELIST)
+        assertNull(back.recheckAfter)
+        assertNull(back.notice)
+        assertTrue(run.state.transitions.isEmpty())
+    }
+
+    @Test
+    fun `with signal tracking loss of the cellular network is a confirmed loud change`() {
+        val run = Run(WHITELIST, silent = Stabilizer.ALWAYS_SILENT)
+        val first = run.after(3.minutes).check(VOICE_ONLY, null)
+        assertEquals(RECHECK_DELAY, first.recheckAfter)
+        assertNull(first.notice)
+        val notice = run.after(RECHECK_DELAY).check(VOICE_ONLY, null).notice
+        assertEquals(Notice.StatusChanged(VOICE_ONLY, null, Volume.LOUD), notice)
     }
 
     @Test

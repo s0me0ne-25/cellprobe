@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
@@ -60,6 +61,7 @@ fun MonitoringSection(
     settings: MonitoringSettings,
     onEnabledChange: (Boolean) -> Unit,
     onIntervalChange: (screenOn: Boolean, interval: Duration) -> Unit,
+    onTrackSignalLossChange: (Boolean) -> Unit,
 ) {
     val context = LocalContext.current
     val permissions = remember(context) { MonitoringPermissions(context) }
@@ -158,6 +160,18 @@ fun MonitoringSection(
             )
             HorizontalDivider()
         }
+        // Spec §3: NO_SIGNAL and VOICE_ONLY are always shown, notified only with this on.
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.monitoring_track_signal_loss)) },
+            supportingContent = { Text(stringResource(R.string.monitoring_track_signal_loss_description)) },
+            trailingContent = { Switch(checked = settings.trackSignalLoss, onCheckedChange = null) },
+            modifier = Modifier.toggleable(
+                value = settings.trackSignalLoss,
+                role = Role.Switch,
+                onValueChange = onTrackSignalLossChange,
+            ),
+        )
+        HorizontalDivider()
     }
 
     onboarding.firstOrNull()?.let { permission ->

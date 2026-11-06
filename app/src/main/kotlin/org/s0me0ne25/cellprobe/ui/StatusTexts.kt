@@ -26,9 +26,9 @@ fun NetworkStatus.titleRes(): Int = when (this) {
     NetworkStatus.USER_OFFLINE -> R.string.status_user_offline
 }
 
-/** What the status means and what to do, shown under the title; null where not written yet. */
+/** What the status means and what to do, shown under the title. */
 @StringRes
-fun NetworkStatus.descriptionRes(): Int? = when (this) {
+fun NetworkStatus.descriptionRes(): Int = when (this) {
     NetworkStatus.NORMAL -> R.string.status_normal_description
     NetworkStatus.NORMAL_NO_VLESS -> R.string.status_normal_no_vless_description
     NetworkStatus.VLESS_BLOCKED -> R.string.status_vless_blocked_description
@@ -38,8 +38,8 @@ fun NetworkStatus.descriptionRes(): Int? = when (this) {
     NetworkStatus.NO_INTERNET -> R.string.status_no_internet_description
     NetworkStatus.LEAK -> R.string.status_leak_description
     NetworkStatus.USER_OFFLINE -> R.string.status_user_offline_description
-    // Detected only from a later step on; texts follow with the detection.
-    NetworkStatus.NO_SIGNAL, NetworkStatus.VOICE_ONLY -> null
+    NetworkStatus.NO_SIGNAL -> R.string.status_no_signal_description
+    NetworkStatus.VOICE_ONLY -> R.string.status_voice_only_description
 }
 
 fun NetworkStatus.tone(): StatusTone = when (this) {

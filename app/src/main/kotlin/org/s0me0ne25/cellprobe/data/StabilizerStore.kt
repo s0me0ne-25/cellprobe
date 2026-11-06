@@ -8,6 +8,7 @@ import androidx.datastore.core.Serializer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import org.s0me0ne25.cellprobe.core.NetworkStatus
 import org.s0me0ne25.cellprobe.core.stabilizer.Decision
 import org.s0me0ne25.cellprobe.core.stabilizer.Observation
 import org.s0me0ne25.cellprobe.core.stabilizer.Stabilizer
@@ -20,11 +21,11 @@ class StabilizerStore(private val dataStore: DataStore<StabilizerState>) {
 
     val state: Flow<StabilizerState> = dataStore.data
 
-    /** Applies [observation] to the stored state and returns the decision. */
-    suspend fun observe(observation: Observation): Decision {
+    /** Applies [observation] to the stored state and returns the decision; see [Stabilizer.observe]. */
+    suspend fun observe(observation: Observation, silent: Set<NetworkStatus>): Decision {
         var decision: Decision? = null
         dataStore.updateData { state ->
-            Stabilizer.observe(state, observation).also { decision = it }.state
+            Stabilizer.observe(state, observation, silent).also { decision = it }.state
         }
         return checkNotNull(decision)
     }

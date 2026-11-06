@@ -122,6 +122,10 @@ class SettingsViewModel(
         }
     }
 
+    fun setTrackSignalLoss(track: Boolean) {
+        viewModelScope.launch { repository.updateMonitoring { it.copy(trackSignalLoss = track) } }
+    }
+
     fun setDetailedJournal(detailed: Boolean) {
         viewModelScope.launch { repository.setDetailedJournal(detailed) }
     }
@@ -192,6 +196,7 @@ fun SettingsScreen(
                     settings = loaded.monitoring,
                     onEnabledChange = viewModel::setMonitoringEnabled,
                     onIntervalChange = viewModel::setInterval,
+                    onTrackSignalLossChange = viewModel::setTrackSignalLoss,
                 )
             }
             item(key = "journal") {

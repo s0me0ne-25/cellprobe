@@ -1,6 +1,6 @@
 # Cellprobe — глоссарий
 
-Версия: 0.9 · 2026-11-05
+Версия: 1.0 · 2026-11-05
 
 Обязателен для текстов интерфейса (русских и английских), README, ТЗ, плана, описаний в каталогах приложений и коммит-сообщений.
 
@@ -81,5 +81,5 @@
 | `NO_INTERNET` | красный | **Полное отсутствие связности** / Авария на стороне провайдера, грубое вмешательство регулятора, или вы подключены к тестовой точке доступа / базовой станции. | **No connectivity at all** / An outage on the provider’s side, heavy-handed regulator interference, or you are connected to a test access point or base station. |
 | `LEAK` | зелёный | **Свободный интернет** / Убедитесь, что Cellprobe добавлен в исключения VPN-клиента. Если да, поздравляем — ваша сеть свободна от регуляторных блокировок. | **Free internet** / Make sure Cellprobe is excluded from the VPN client. If it is, congratulations: your network is free of regulatory blocking. |
 | `USER_OFFLINE` | обычный | **Отключено пользователем** / Отключены все сетевые интерфейсы или включён авиарежим. | **Turned off by the user** / All network interfaces are off or airplane mode is on. |
-| `NO_SIGNAL` | красный | **Нет сигнала мобильной сети** / — (тексты уточняются на шаге 13) | **No mobile network signal** / — |
-| `VOICE_ONLY` | красный | **Только голосовая связь, мобильный интернет не подключается** / — (тексты уточняются на шаге 13) | **Voice only: mobile data does not connect** / — |
+| `NO_SIGNAL` | красный | **Нет сигнала мобильной сети** / Телефон не видит сотовую сеть: вне зоны покрытия, в подвале или лифте — либо базовые станции вокруг отключены. | **No mobile network signal** / The phone sees no cellular network: out of coverage, in a basement or a lift, or the base stations around are turned off. |
+| `VOICE_ONLY` | красный | **Только голосовая связь, мобильный интернет не подключается** / Телефон зарегистрирован в сети, звонки и SMS работают, но мобильный интернет не подключается: авария у оператора или его отключение в округе. | **Voice only: mobile data does not connect** / The phone is registered in the network and calls and SMS work, but mobile data does not connect: an outage at the operator or a shutdown in the area. |

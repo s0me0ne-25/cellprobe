@@ -13,5 +13,6 @@ class CellprobeApplication : Application() {
         super.onCreate()
         container = AppContainer(this)
         container.startRussianStateCaCleanup()
+        container.networkStateReader.start()
     }
 }

@@ -41,11 +41,9 @@ object StatusActions {
             listOf(StatusAction.LaunchRole(AppRole.I2P), StatusAction.LaunchRole(AppRole.VPN_CLIENT))
         NetworkStatus.WHITELIST -> listOf(StatusAction.LaunchRole(AppRole.OLCRTC))
         NetworkStatus.PAY -> listOf(StatusAction.ProviderPages)
-        NetworkStatus.AUTH_REQUIRED,
-        NetworkStatus.NO_INTERNET,
-        NetworkStatus.NO_SIGNAL,
-        NetworkStatus.VOICE_ONLY,
-        -> listOf(StatusAction.OpenSettings(settingsFor(networkType)))
+        NetworkStatus.AUTH_REQUIRED, NetworkStatus.NO_INTERNET -> listOf(StatusAction.OpenSettings(settingsFor(networkType)))
+        // The cellular network is the problem, whatever network was active before.
+        NetworkStatus.NO_SIGNAL, NetworkStatus.VOICE_ONLY -> listOf(StatusAction.OpenSettings(SettingsScreen.MOBILE_NETWORK))
         NetworkStatus.USER_OFFLINE -> emptyList()
     }
 
